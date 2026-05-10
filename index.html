@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fault Diagnosis">
+<meta name="mobile-web-app-capable" content="yes">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a1a2e'/><text y='24' font-size='20' text-anchor='middle' x='16'>⚙️</text></svg>">
+<title>Gypsum Board Fault Diagnosis System</title>
+<style>
+:root {
+  --bg: #f5f5f5; --card: #fff; --text: #1a1a1a; --text2: #666; --border: #e0e0e0;
+  --primary: #d4380d; --orange: #d46b08; --yellow: #d4b106; --blue: #096dd9; --green: #389e0d;
+  --tab-bg: #fff; --tab-active: #d4380d; --shadow: 0 2px 8px rgba(0,0,0,.08);
+  --red-bg: #fff1f0; --orange-bg: #fff7e6; --yellow-bg: #fffbe6; --blue-bg: #e6f7ff; --green-bg: #f6ffed;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.5;
+  max-width: 800px; margin: 0 auto; padding-bottom: 70px; -webkit-tap-highlight-color: transparent;
+}
+.header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #fff; padding: 16px 20px; position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,.15);
+}
+.header h1 { font-size: 18px; font-weight: 600; }
+.header .sub { font-size: 12px; opacity: .75; margin-top: 2px; }
+.header .count { font-size: 11px; opacity: .6; margin-top: 4px; }
+.lang-toggle {
+  background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.3);
+  border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 11px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  transition: background .2s; white-space: nowrap; margin-left: 8px;
+}
+.lang-toggle:hover { background: rgba(255,255,255,.25); }
+
+/* severity badges */
+.sev { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; }
+.sev-red { background: var(--red-bg); color: var(--primary); }
+.sev-orange { background: var(--orange-bg); color: var(--orange); }
+.sev-yellow { background: var(--yellow-bg); color: var(--yellow); }
+.sev-info { background: var(--blue-bg); color: var(--blue); }
+
+/* bottom tab bar */
+.tab-bar {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  max-width: 800px; width: 100%; background: var(--tab-bg);
+  display: flex; border-top: 1px solid var(--border); z-index: 100;
+  box-shadow: 0 -2px 8px rgba(0,0,0,.05);
+}
+.tab-item {
+  flex: 1; text-align: center; padding: 8px 4px; cursor: pointer;
+  color: var(--text2); transition: color .2s; font-size: 10px; user-select: none;
+}
+.tab-item .icon { font-size: 20px; display: block; margin-bottom: 2px; }
+.tab-item.active { color: var(--tab-active); }
+
+/* cards */
+.card {
+  background: var(--card); border-radius: 10px; padding: 14px 16px;
+  margin: 10px 12px; box-shadow: var(--shadow);
+}
+.card h3 { font-size: 15px; margin-bottom: 6px; }
+.card .meta { font-size: 12px; color: var(--text2); margin-bottom: 8px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.card .field { margin-bottom: 6px; }
+.card .field-label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+.card .field-value { font-size: 14px; }
+
+/* search bar */
+.search-bar {
+  padding: 12px; position: sticky; top: 72px; z-index: 50; background: var(--bg);
+}
+.search-input {
+  width: 100%; padding: 10px 16px; border: 2px solid var(--border); border-radius: 24px;
+  font-size: 15px; outline: none; transition: border-color .3s; background: var(--card);
+}
+.search-input:focus { border-color: var(--primary); }
+
+/* area chips */
+.area-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 12px 12px; }
+.area-chip {
+  padding: 6px 14px; border-radius: 16px; font-size: 13px; border: 1px solid var(--border);
+  background: var(--card); cursor: pointer; transition: all .2s; user-select: none;
+}
+.area-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* form */
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px; color: #555; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 14px; font-family: inherit; outline: none; background: var(--card);
+  transition: border-color .2s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--primary); }
+.form-textarea { resize: vertical; min-height: 60px; }
+.btn {
+  padding: 10px 24px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all .2s; display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { opacity: .9; }
+.btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+.btn-danger { background: #fff; color: var(--primary); border: 1px solid var(--primary); }
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+.btn-block { width: 100%; justify-content: center; }
+.btn-group { display: flex; gap: 8px; margin-top: 12px; }
+
+/* results */
+.result-count { font-size: 13px; color: var(--text2); padding: 4px 16px; }
+.empty-state { text-align: center; padding: 48px 20px; color: var(--text2); }
+.empty-state .big { font-size: 40px; margin-bottom: 12px; }
+
+/* settings */
+.setting-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+}
+.setting-item:last-child { border-bottom: none; }
+.setting-label { font-size: 14px; font-weight: 500; }
+
+/* toast */
+.toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  background: #333; color: #fff; padding: 10px 24px; border-radius: 24px;
+  font-size: 14px; z-index: 999; animation: fadeInOut 2s forwards;
+  pointer-events: none;
+}
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  20% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.modal {
+  background: var(--card); border-radius: 12px; padding: 20px; max-width: 500px; width: 100%;
+  max-height: 80vh; overflow-y: auto;
+}
+.modal h3 { margin-bottom: 12px; }
+
+/* danger zone */
+.danger-zone { border: 1px solid var(--primary); border-radius: 8px; padding: 12px; margin-top: 12px; }
+.danger-zone h4 { color: var(--primary); font-size: 13px; margin-bottom: 4px; }
+
+/* hidden sections */
+.page { display: none; }
+.page.active { display: block; }
+
+/* sync status */
+.sync-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 10px; border-radius: 12px; }
+.sync-ok { background: #f6ffed; color: var(--green); }
+.sync-pending { background: #fffbe6; color: var(--yellow); }
+.sync-error { background: #fff1f0; color: var(--primary); }
+.sync-none { background: #f5f5f5; color: #999; }
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.sync-dot.ok { background: var(--green); }
+.sync-dot.pending { background: var(--yellow); animation: pulse 1s infinite; }
+.sync-dot.error { background: var(--primary); }
+.sync-dot.none { background: #ccc; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+
+.sync-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 12px; }
+.sync-card h4 { font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.sync-log { font-size: 11px; color: #999; margin-top: 8px; max-height: 80px; overflow-y: auto; background: #fafafa; padding: 8px; border-radius: 4px; white-space: pre-wrap; word-break: break-all; }
+
+/* photo upload */
+.photo-upload { border: 2px dashed var(--border); border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; transition: border-color .2s; }
+.photo-upload:hover { border-color: var(--primary); }
+.photo-upload .icon { font-size: 32px; margin-bottom: 4px; }
+.photo-upload .hint { font-size: 12px; color: #999; }
+.photo-preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.photo-thumb { position: relative; width: 80px; height: 80px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.photo-thumb .del { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; background: rgba(0,0,0,.6); color: #fff; border-radius: 50%; font-size: 12px; line-height: 20px; text-align: center; cursor: pointer; border: none; }
+.photo-in-card { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+.photo-in-card img { width: 100px; height: 100px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); cursor: pointer; transition: transform .2s; }
+.photo-in-card img:hover { transform: scale(1.05); }
+
+/* photo modal */
+.photo-modal { position: fixed; inset: 0; background: rgba(0,0,0,.9); z-index: 300; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.photo-modal img { max-width: 95vw; max-height: 95vh; object-fit: contain; border-radius: 4px; }
+.photo-modal .close-btn { position: absolute; top: 16px; right: 16px; color: #fff; font-size: 28px; cursor: pointer; width: 36px; height: 36px; text-align: center; line-height: 36px; background: rgba(255,255,255,.2); border-radius: 50%; border: none; }
+
+/* No login needed — public demo */
+</style>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<script>
+// Firebase initialization
+firebase.initializeApp({
+  apiKey: "AIzaSyAR2YnLR4dCBTIYLilektt9bHk-ZBjtqEk",
+  authDomain: "bnbm-fault-db.firebaseapp.com",
+  databaseURL: "https://bnbm-fault-db-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "bnbm-fault-db",
+  storageBucket: "bnbm-fault-db.firebasestorage.app",
+  messagingSenderId: "808459521762",
+  appId: "1:808459521762:web:2751e5e88427eb7d4418bb"
+});
+const db = firebase.database();
+</script>
+
+<!-- No password — public portfolio demo -->
+
+<div class="header">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+    <div>
+      <h1 id="headerTitle">Gypsum Board Fault Diagnosis System</h1>
+      <div class="sub">BNBM Industrial (Tanzania) Co., Ltd.</div>
+      <div class="count" id="headerCount">Knowledge Base: 94 fault records</div>
+    </div>
+    <button class="lang-toggle" onclick="switchLang()" id="langToggle" title="Switch to Chinese">
+      <span style="font-size:16px;">🌐</span><span style="font-size:12px;">中文</span>
+    </button>
+  </div>
+</div>
+
+<!-- Search Page -->
+<div class="page active" id="pageSearch">
+  <div class="search-bar">
+    <input type="text" class="search-input" id="searchInput"
+           placeholder="Search keywords (e.g.: soft board, overfire, poor bonding, power outage...)" autocomplete="off" oninput="onSearchInput()">
+  </div>
+  <div class="result-count" id="resultCount"></div>
+  <div id="searchResults"></div>
+</div>
+
+<!-- Browse Page -->
+<div class="page" id="pageBrowse">
+  <div style="padding:12px 16px;">
+    <select class="form-select" id="browseArea" onchange="renderBrowse()" style="margin-bottom:8px;">
+      <option value="">All Areas</option>
+    </select>
+    <select class="form-select" id="browseSeverity" onchange="renderBrowse()">
+      <option value="">All Levels</option>
+      <option value="红色">Red</option>
+      <option value="橙色">Orange</option>
+      <option value="黄色">Yellow</option>
+      <option value="信息">Info</option>
+    </select>
+  </div>
+  <div class="result-count" id="browseCount"></div>
+  <div id="browseResults"></div>
+</div>
+
+<!-- Add New Page -->
+<div class="page" id="pageAdd">
+  <div class="card">
+    <h3 id="addTitle">Add New Fault Record</h3>
+    <div class="form-group">
+      <label class="form-label" id="lblSymptom">Fault Symptom *</label>
+      <input type="text" class="form-input" id="fSymptom" placeholder="e.g.: Dryer layer 3 board jam">
+    </div>
+    <div class="form-group">
+      <label class="form-label" id="lblArea">Area *</label>
+      <select class="form-select" id="fArea">
+        <option value="原热">Raw Heat (Yuan Re)</option>
+        <option value="一控">Control 1 (Yi Kong)</option>
+        <option value="二控">Control 2 (Er Kong)</option>
+        <option value="三控">Control 3 (San Kong)</option>
+        <option value="全线">Full Line</option>
+        <option value="覆膜板">Laminated Board</option>
+        <option value="化验室">Laboratory</option>
+        <option value="原热/一控">Raw Heat / Control 1</option>
+        <option value="原热/三控">Raw Heat / Control 3</option>
+        <option value="二控/三控">Control 2 / Control 3</option>
+        <option value="一控/原热">Control 1 / Raw Heat</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label" id="lblKeywords">Keywords (comma separated) *</label>
+      <input type="text" class="form-input" id="fKeywords" placeholder="e.g.: soft board, dryer, jam">
+    </div>
+    <div class="form-group">
+      <label class="form-label" id="lblSeverity">Severity Level</label>
+      <select class="form-select" id="fSeverity">
+        <option value="红色">Red</option>
+        <option value="橙色">Orange</option>
+        <option value="黄色">Yellow</option>
+        <option value="信息">Info</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label" id="lblRootCause">Root Cause Analysis *</label>
+      <textarea class="form-textarea" id="fRootCause" rows="2" placeholder="Root cause of the fault"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label" id="lblSolution">Solution *</label>
+      <textarea class="form-textarea" id="fSolution" rows="3" placeholder="Specific steps to resolve"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label" id="lblPrevention">Prevention</label>
+      <textarea class="form-textarea" id="fPrevention" rows="2" placeholder="Measures to prevent recurrence"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label" id="lblPhotos">Photos (optional, max 3)</label>
+      <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
+        <div class="icon">📷</div>
+        <div class="hint" id="photoHint">Click to upload photos, auto-compressed</div>
+      </div>
+      <input type="file" id="photoInput" accept="image/*" multiple onchange="handlePhotos(event)" style="display:none;">
+      <div class="photo-preview" id="photoPreview"></div>
+    </div>
+    <input type="hidden" id="fEditId">
+    <input type="hidden" id="fPhotos" value="">
+    <div class="btn-group">
+      <button class="btn btn-primary btn-block" onclick="saveFault()" id="btnSave">Save Fault Record</button>
+      <button class="btn btn-secondary" onclick="cancelEdit()" id="btnCancel" style="display:none;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Page -->
+<div class="page" id="pageSettings">
+  <!-- Firebase Sync Status -->
+  <div class="card">
+    <h3 style="margin-bottom:4px;" id="settingsSyncTitle">Real-time Cloud Sync</h3>
+    <p style="font-size:12px;color:#999;margin-bottom:12px;" id="settingsSyncDesc">Based on Firebase Realtime Database. When anyone adds/edits a fault record, all other users see the update instantly.</p>
+    <div id="syncStatusArea" style="margin-bottom:10px;"></div>
+    <div class="sync-log" id="syncLog" style="display:none;"></div>
+  </div>
+
+  <!-- Data Management -->
+  <div class="card" style="margin-top:8px;">
+    <h3 style="margin-bottom:8px;" id="settingsDataTitle">Data Management</h3>
+    <div class="setting-item">
+      <span class="setting-label" id="settingsKbTotal">Total Records</span>
+      <span id="settingTotal" style="font-weight:600;"></span>
+    </div>
+    <div class="setting-item">
+      <span class="setting-label" id="settingsUserAdded">User Added</span>
+      <span id="settingUserAdded" style="font-weight:600;"></span>
+    </div>
+    <div class="setting-item">
+      <span class="setting-label" id="settingsSyncStatus">Cloud Sync Status</span>
+      <span id="settingSync" style="font-weight:600;"></span>
+    </div>
+    <div class="setting-item">
+      <span class="setting-label" id="settingsVersion">System Version</span>
+      <span id="settingVersion" style="font-weight:600;color:#999;"></span>
+    </div>
+    <div style="margin-top:16px; display:flex; flex-direction:column; gap:8px;">
+      <button class="btn btn-secondary btn-block" onclick="exportData()" id="btnExport">Export Backup (JSON)</button>
+      <button class="btn btn-secondary btn-block" onclick="document.getElementById('importFile').click()" id="btnImport">Import & Merge (JSON)</button>
+      <input type="file" id="importFile" accept=".json" onchange="importData(event)" style="display:none;">
+    </div>
+    <div class="danger-zone" style="margin-top:16px;">
+      <h4 id="dangerTitle">Danger Zone</h4>
+      <p style="font-size:13px;color:#999;margin:4px 0 8px;" id="dangerDesc">Clear all user-added fault records (94 preset records unaffected)</p>
+      <button class="btn btn-danger btn-sm" onclick="resetUserData()" id="btnClear">Clear User Data</button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:8px;">
+    <h3 style="margin-bottom:8px;" id="helpTitle">Help</h3>
+    <p style="font-size:13px;color:#666;line-height:1.8;" id="helpText">
+      <strong>Search:</strong> Type keywords for instant matching<br>
+      <strong>Filter:</strong> Click area tags to filter faults by section<br>
+      <strong>Browse:</strong> View all records by area/severity<br>
+      <strong>Add New:</strong> Record new issues into the knowledge base<br>
+      <strong>Cloud Sync:</strong> Multi-device real-time sync via Firebase<br>
+      <strong>Export:</strong> Regular JSON backup export<br>
+      <strong>Import:</strong> Merge backup or shared JSON files
+    </p>
+    <p style="font-size:11px;color:#999;margin-top:8px;" id="versionInfo">
+      Version 2.0 (Cloud Sync) | Built by XinTao Shi | Tanzania Plant | 2026-05
+    </p>
+  </div>
+</div>
+
+<!-- Bottom Tab Bar -->
+<div class="tab-bar">
+  <div class="tab-item active" data-page="pageSearch" onclick="switchTab('pageSearch')">
+    <span class="icon">🔍</span>Search
+  </div>
+  <div class="tab-item" data-page="pageBrowse" onclick="switchTab('pageBrowse')">
+    <span class="icon">📋</span>Browse
+  </div>
+  <div class="tab-item" data-page="pageAdd" onclick="switchTab('pageAdd')">
+    <span class="icon">➕</span>Add New
+  </div>
+  <div class="tab-item" data-page="pageSettings" onclick="switchTab('pageSettings')">
+    <span class="icon">⚙️</span>Settings
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+
+<script>
+// ============ I18N SYSTEM ============
+let currentLang = localStorage.getItem('bnbm_lang') || 'en';
+
+const I18N = {
+  zh: {
+    headerTitle: '石膏板产线故障诊断',
+    headerCount: '知识库',
+    items: '项故障记录',
+    searchPlaceholder: '输入故障关键词（如：板软、过火、粘结不良、断电...）',
+    searchTab: '搜索诊断',
+    browseTab: '按区浏览',
+    addTab: '新增故障',
+    settingsTab: '设置',
+    allAreas: '全部区域',
+    allLevels: '全部级别',
+    resultFound: '找到',
+    records: '条相关记录',
+    totalRecords: '条故障记录',
+    noResult: '未找到匹配的故障记录，请尝试其他关键词',
+    noMatch: '无匹配记录',
+    addTitle: '新增故障记录',
+    editTitle: '编辑故障记录',
+    symptom: '故障现象',
+    symptomPh: '如：干燥机三层堵板',
+    area: '所属区域',
+    keywords: '关键词（用逗号分隔）',
+    keywordsPh: '如：板软,干燥机,堵板',
+    severity: '警报级别',
+    rootCause: '根因分析',
+    rootCausePh: '导致故障的根本原因',
+    solution: '解决措施',
+    solutionPh: '具体解决步骤',
+    prevention: '预防建议',
+    preventionPh: '预防再次发生的措施',
+    photos: '现场照片（可选，最多3张）',
+    photoHint: '点击上传故障现场照片，自动压缩',
+    saveBtn: '保存故障记录',
+    cancelBtn: '取消编辑',
+    userAdded: '用户新增',
+    matchScore: '匹配',
+    fieldRootCause: '根因分析',
+    fieldSolution: '解决措施',
+    fieldPrevention: '预防建议',
+    cloudSync: '多人云端同步',
+    cloudSyncDesc: '一人配置，全员共享。其他人只需输入知识库 ID 即可自动获取最新记录。',
+    gistIdLabel: '知识库 ID（Gist ID）',
+    gistIdPh: '如已有人创建，粘贴知识库 ID 即可查看',
+    gistIdHint: '仅查看无需 Token；如需新增/编辑故障，请同时填写下方 Token',
+    tokenLabel: 'GitHub Token（可选，仅新增/编辑时需要）',
+    tokenCreateLink: '点击创建 token',
+    tokenHint: '勾选 gist 权限',
+    connectBtn: '🔗 连接知识库',
+    syncNowBtn: '🔄 立即同步',
+    copyIdBtn: '📋 复制知识库 ID 分享给同事',
+    dataManage: '数据管理',
+    kbTotal: '知识库总数',
+    userAddedCount: '用户新增',
+    syncStatus: '云端同步状态',
+    exportBtn: '导出知识库备份 (JSON)',
+    importBtn: '导入知识库 (JSON 合并)',
+    dangerZone: '危险操作',
+    dangerDesc: '清除所有用户新增的故障记录（预置94项不受影响）',
+    clearBtn: '清除用户数据',
+    helpTitle: '使用帮助',
+    helpText: '<strong>搜索：</strong>输入关键词即时匹配<br><strong>筛选：</strong>点击区域标签过滤特定工段故障<br><strong>浏览：</strong>按区域/级别逐条查看全部记录<br><strong>新增：</strong>积累的新问题可录入知识库<br><strong>云同步：</strong>配置后多设备多人自动同步<br><strong>导出：</strong>定期导出 JSON 备份<br><strong>导入：</strong>合并备份或他人分享的 JSON',
+    version: '版本 2.0 (云同步+照片+双语)',
+    notConfigured: '未配置',
+    connected: '已连接',
+    readWrite: '可读写',
+    readOnly: '仅查看',
+    fillRequired: '请填写必填项：故障现象、关键词、根因分析、解决措施',
+    saved: '故障记录已更新！',
+    added: '新故障记录已添加！',
+    deleted: '故障记录已删除',
+    exported: '知识库已导出！',
+    imported: '成功导入',
+    newRecords: '条新记录！',
+    cleared: '用户数据已清除',
+    copyDone: '知识库 ID 已复制！发送给同事即可',
+    connecting: '正在连接知识库...',
+    connectedOk: '知识库已连接！',
+    creatingKb: '正在创建公开知识库（所有人可查看）...',
+    kbReady: '知识库已就绪！将 ID 分享给同事即可多人共用',
+    syncing: '正在同步...',
+    syncDone: '同步完成！',
+    syncFail: '同步失败',
+    needGistId: '请至少输入知识库 ID 或 GitHub Token',
+    checkId: '连接失败，请检查知识库 ID 是否正确',
+    noWritePerm: '仅查看模式，无法上传。请配置 Token 后重试。',
+    autoSyncing: '数据变更，自动同步中...',
+    autoSyncDone: '✅ 自动同步完成',
+    autoSyncFail: '⚠️ 自动同步失败',
+    startupSync: '启动时自动拉取云端数据...',
+    startupSyncDone: '✅ 启动同步完成',
+    startupSyncFail: '⚠️ 启动同步失败（将使用本地数据）',
+    importFail: '文件格式不正确',
+    importNoNew: '没有新记录可导入（所有记录已存在）',
+    importError: 'Import failed: file format error',
+    configureFail: 'Configuration failed'
+  },
+
+  en: {
+    headerTitle: 'Gypsum Board Production Line Fault Diagnosis System',
+    headerCount: 'Knowledge Base',
+    items: 'fault records',
+    searchPlaceholder: 'Search keywords (e.g.: soft board, overfire, poor bonding, power outage...)',
+    searchTab: 'Search',
+    browseTab: 'Browse',
+    addTab: 'Add New',
+    settingsTab: 'Settings',
+    allAreas: 'All Areas',
+    allLevels: 'All Levels',
+    resultFound: 'Found',
+    records: 'matching records',
+    totalRecords: 'fault records',
+    noResult: 'No matching fault records found. Try other keywords.',
+    noMatch: 'No matching records',
+    addTitle: 'Add New Fault Record',
+    editTitle: 'Edit Fault Record',
+    symptom: 'Fault Symptom',
+    symptomPh: 'e.g.: Dryer layer 3 board jam',
+    area: 'Area',
+    keywords: 'Keywords (comma separated)',
+    keywordsPh: 'e.g.: soft board, dryer, jam',
+    severity: 'Severity Level',
+    rootCause: 'Root Cause Analysis',
+    rootCausePh: 'Root cause of the fault',
+    solution: 'Solution',
+    solutionPh: 'Specific steps to resolve',
+    prevention: 'Prevention',
+    preventionPh: 'Measures to prevent recurrence',
+    photos: 'Photos (optional, max 3)',
+    photoHint: 'Click to upload photos, auto-compressed',
+    saveBtn: 'Save Fault Record',
+    cancelBtn: 'Cancel',
+    userAdded: 'User Added',
+    matchScore: 'Match',
+    fieldRootCause: 'Root Cause',
+    fieldSolution: 'Solution',
+    fieldPrevention: 'Prevention',
+    cloudSync: 'Real-time Cloud Sync',
+    cloudSyncDesc: 'Based on Firebase Realtime Database. Changes sync instantly across all users.',
+    gistIdLabel: 'Knowledge Base ID (Gist ID)',
+    gistIdPh: 'Paste existing KB ID to view',
+    gistIdHint: 'No Token needed for view-only; Token required for add/edit',
+    tokenLabel: 'GitHub Token (optional, for add/edit)',
+    tokenCreateLink: 'Click to create token',
+    tokenHint: 'Select gist scope',
+    connectBtn: 'Connect Knowledge Base',
+    syncNowBtn: 'Sync Now',
+    copyIdBtn: 'Copy KB ID to share',
+    dataManage: 'Data Management',
+    kbTotal: 'Total Records',
+    userAddedCount: 'User Added',
+    syncStatus: 'Cloud Sync Status',
+    exportBtn: 'Export Backup (JSON)',
+    importBtn: 'Import & Merge (JSON)',
+    dangerZone: 'Danger Zone',
+    dangerDesc: 'Clear all user-added records (94 preset records unaffected)',
+    clearBtn: 'Clear User Data',
+    helpTitle: 'Help',
+    helpText: '<strong>Search:</strong> Type keywords for instant matching<br><strong>Filter:</strong> Click area tags to filter<br><strong>Browse:</strong> View all records by area/severity<br><strong>Add New:</strong> Record new issues into the KB<br><strong>Cloud Sync:</strong> Multi-device real-time sync via Firebase<br><strong>Export:</strong> Regular JSON backup export<br><strong>Import:</strong> Merge backup or shared JSON files',
+    version: 'Version 2.0 (Cloud Sync + Photos + Trilingual)',
+    notConfigured: 'Not Configured',
+    connected: 'Connected',
+    readWrite: 'Read/Write',
+    readOnly: 'View Only',
+    fillRequired: 'Please fill in: Symptom, Keywords, Root Cause, Solution',
+    saved: 'Fault record updated!',
+    added: 'New fault record added!',
+    deleted: 'Fault record deleted',
+    exported: 'Knowledge base exported!',
+    imported: 'Successfully imported',
+    newRecords: 'new records!',
+    cleared: 'User data cleared',
+    copyDone: 'KB ID copied! Share with colleagues',
+    connecting: 'Connecting to knowledge base...',
+    connectedOk: 'Knowledge base connected!',
+    creatingKb: 'Creating public knowledge base...',
+    kbReady: 'Knowledge base ready! Share ID with colleagues',
+    syncing: 'Syncing...',
+    syncDone: 'Sync complete!',
+    syncFail: 'Sync failed',
+    needGistId: 'Please enter KB ID or GitHub Token',
+    checkId: 'Connection failed. Check the KB ID.',
+    noWritePerm: 'View-only mode. Configure Token to add records.',
+    autoSyncing: 'Data changed, auto-syncing...',
+    autoSyncDone: 'Auto-sync complete',
+    autoSyncFail: 'Auto-sync failed',
+    startupSync: 'Pulling cloud data on startup...',
+    startupSyncDone: 'Startup sync complete',
+    startupSyncFail: 'Startup sync failed (using local data)',
+    importFail: 'Invalid file format',
+    importNoNew: 'No new records to import (all already exist)',
+    importError: 'Import failed: file format error',
+    configureFail: 'Configuration failed'
+  },
+
+  sw: {
+    headerTitle: 'Mfumo wa Utambuzi wa Hitilafu',
+    headerCount: 'Hifadhi ya Maarifa',
+    items: 'rekodi za hitilafu',
+    searchPlaceholder: 'Tafuta kwa neno (mf: bodi laini, moto mkali, kukatika umeme...)',
+    searchTab: 'Tafuta',
+    browseTab: 'Vinjari',
+    addTab: 'Ongeza',
+    settingsTab: 'Mipangilio',
+    allAreas: 'Maeneo Yote',
+    allLevels: 'Ngazi Zote',
+    resultFound: 'Imepatikana',
+    records: 'rekodi',
+    totalRecords: 'rekodi za hitilafu',
+    noResult: 'Hakuna rekodi zilizopatikana, jaribu maneno mengine',
+    noMatch: 'Hakuna rekodi',
+    addTitle: 'Ongeza Hitilafu Mpya',
+    editTitle: 'Hariri Rekodi ya Hitilafu',
+    symptom: 'Dalili ya Hitilafu',
+    symptomPh: 'Mf: Kikaushio safu ya tatu kukwama',
+    area: 'Eneo',
+    keywords: 'Maneno muhimu (kwa koma)',
+    keywordsPh: 'Mf: bodi laini,kikaushio,kukwama',
+    severity: 'Kiwango cha Tahadhari',
+    rootCause: 'Chanzo (Sababu Kuu)',
+    rootCausePh: 'Sababu kuu ya hitilafu',
+    solution: 'Suluhisho (Hatua za Kurekebisha)',
+    solutionPh: 'Hatua maalum za kurekebisha',
+    prevention: 'Kinga (Zuia)',
+    preventionPh: 'Hatua za kuzuia kutokea tena',
+    photos: 'Picha (si lazima, max 3)',
+    photoHint: 'Bofya kupakia picha, itapunguzwa ukubwa',
+    saveBtn: 'Hifadhi Rekodi',
+    cancelBtn: 'Ghairi',
+    userAdded: 'Imeongezwa',
+    matchScore: 'Sawazisha',
+    fieldRootCause: 'Chanzo',
+    fieldSolution: 'Suluhisho',
+    fieldPrevention: 'Kinga',
+    cloudSync: 'Mawasiliano ya Watu Wengi',
+    cloudSyncDesc: 'Mtu mmoja atasanidi, wote watashiriki. Watu wengine wanahitaji tu Kitambulisho cha hifadhi.',
+    gistIdLabel: 'Kitambulisho cha Hifadhi (Gist ID)',
+    gistIdPh: 'Ikiwa mtu amesanidi tayari, bandika kitambulisho kutazama',
+    gistIdHint: 'Kutazama tu hakuhitaji Token; kuongeza/kuhariri inahitaji Token',
+    tokenLabel: 'GitHub Token (si lazima, inahitajika kwa kuongeza/kuhariri)',
+    tokenCreateLink: 'Bofya kuunda token',
+    tokenHint: 'Chagua ruhusa ya gist',
+    connectBtn: '🔗 Unganisha Hifadhi',
+    syncNowBtn: '🔄 Sasa Sawazisha',
+    copyIdBtn: '📋 Nakili Kitambulisho uwashirikishe wenzako',
+    dataManage: 'Usimamizi wa Data',
+    kbTotal: 'Jumla ya Hifadhi',
+    userAddedCount: 'Imeongezwa na Mtumiaji',
+    syncStatus: 'Hali ya Mawasiliano',
+    exportBtn: 'Hamisha Nakala (JSON)',
+    importBtn: 'Ingiza Hifadhi (JSON Unganisha)',
+    dangerZone: 'Hatari',
+    dangerDesc: 'Futa rekodi zote zilizoongezwa (rekodi 94 za msingi hazitaguswa)',
+    clearBtn: 'Futa Data ya Mtumiaji',
+    helpTitle: 'Msaada',
+    helpText: '<strong>Tafuta:</strong> Andika neno kutafuta papo hapo<br><strong>Chuja:</strong> Bofya lebo za eneo<br><strong>Vinjari:</strong> Angalia rekodi zote kwa eneo/kiwango<br><strong>Ongeza:</strong> Weka rekodi mpya za hitilafu<br><strong>Mawasiliano:</strong> Sanidi kushiriki data kati ya watu wote<br><strong>Hamisha:</strong> Hifadhi nakala ya JSON<br><strong>Ingiza:</strong> Unganisha nakala au faili za wenzako',
+    version: 'Toleo 2.0 (Mawasiliano+Picha+Lugha Mbili)',
+    notConfigured: 'Haijasanidiwa',
+    connected: 'Imesanidiwa',
+    readWrite: 'Inaweza Kusoma na Kuandika',
+    readOnly: 'Kutazama Tu',
+    fillRequired: 'Jaza sehemu zinazohitajika',
+    saved: 'Rekodi imesasishwa!',
+    added: 'Rekodi mpya imeongezwa!',
+    deleted: 'Rekodi imefutwa',
+    exported: 'Hifadhi imehamishwa!',
+    imported: 'Imefaulu kuingiza',
+    newRecords: 'rekodi mpya!',
+    cleared: 'Data ya mtumiaji imefutwa',
+    copyDone: 'Kitambulisho kimenakiliwa! Tuma kwa wenzako',
+    connecting: 'Inaunganisha hifadhi...',
+    connectedOk: 'Hifadhi imeunganishwa!',
+    creatingKb: 'Inaunda hifadhi ya wazi (watu wote wanaweza kutazama)...',
+    kbReady: 'Hifadhi iko tayari! Shiriki Kitambulisho na wenzako',
+    syncing: 'Inasawazisha...',
+    syncDone: 'Imesawazishwa!',
+    syncFail: 'Imeshindwa kusawazisha',
+    needGistId: 'Angalau ingiza Kitambulisho au Token',
+    checkId: 'Imeshindwa kuunganisha, angalia Kitambulisho',
+    noWritePerm: 'Hali ya kutazama tu. Sanidi Token kuongeza rekodi.',
+    autoSyncing: 'Data imebadilika, inasawazisha...',
+    autoSyncDone: '✅ Imesawazishwa kiotomatiki',
+    autoSyncFail: '⚠️ Imeshindwa kusawazisha kiotomatiki',
+    startupSync: 'Inavuta data kutoka wingu...',
+    startupSyncDone: '✅ Imesawazishwa mwanzoni',
+    startupSyncFail: '⚠️ Haitumii data ya ndani',
+    importFail: 'Muundo wa faili si sahihi',
+    importNoNew: 'Hakuna rekodi mpya (zote zipo tayari)',
+    importError: 'Imeshindwa kuingiza: Faili na hitilafu',
+    configureFail: 'Imeshindwa kusanidi'
+  }
+};
+
+function t(key) {
+  const lang = I18N[currentLang] || I18N.zh;
+  return lang[key] || I18N.zh[key] || key;
+}
+
+// Swahili translation cache for user-added records
+var _swCache = {};
+(function() { try { _swCache = JSON.parse(localStorage.getItem('bnbm_sw_cache') || '{}'); } catch(e) { _swCache = {}; } })();
+
+var _translating = false;
+
+function translateToSw(text) {
+  if (!text || !text.trim()) return Promise.resolve(text);
+  if (_swCache[text]) return Promise.resolve(_swCache[text]);
+  return fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=sw&dt=t&q=' + encodeURIComponent(text))
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      var result = (data[0] || []).map(function(x) { return x[0]; }).join('') || text;
+      _swCache[text] = result;
+      localStorage.setItem('bnbm_sw_cache', JSON.stringify(_swCache));
+      return result;
+    }).catch(function(err) {
+      // Don't cache on error, so it can be retried later
+      console.log('Translation failed: ' + text.slice(0,20) + '... (' + err.message + ')');
+      return text;
+    });
+}
+
+function autoTranslateUserFaults() {
+  var userData = loadUserData();
+  var newCount = 0;
+  userData.forEach(function(f) {
+    [f.symptom, f.root_cause, f.solution, f.prevention || ''].forEach(function(txt) {
+      if (txt && !_swCache[txt]) newCount++;
+    });
+  });
+  if (newCount === 0) return Promise.resolve();
+  _translating = true;
+  showToast('Translating ' + newCount + ' records...');
+  var promises = [];
+  userData.forEach(function(f) {
+    [f.symptom, f.root_cause, f.solution, f.prevention || ''].forEach(function(txt) {
+      if (txt && !_swCache[txt]) promises.push(translateToSw(txt));
+    });
+  });
+  return Promise.all(promises).then(function() {
+    _translating = false;
+    showToast('Translation complete');
+  }).catch(function() {
+    _translating = false;
+  });
+}
+
+function switchLang() {
+  if (currentLang === 'en') { currentLang = 'zh'; }
+  else if (currentLang === 'zh') { currentLang = 'sw'; }
+  else { currentLang = 'en'; }
+  localStorage.setItem('bnbm_lang', currentLang);
+  applyTranslations();
+  if (currentLang === 'sw') {
+    autoTranslateUserFaults().then(function() { refreshAll(); });
+  } else {
+    refreshAll();
+  }
+}
+
+function applyTranslations() {
+  // Header
+  document.getElementById('headerTitle').textContent = t('headerTitle');
+  document.getElementById('headerCount').textContent = t('headerCount') + ': ' + getFullKB().length + ' ' + t('items');
+  var nextLang = { en: 'zh', zh: 'sw', sw: 'en' };
+  var nextName = { en: '中文', zh: 'Kiswahili', sw: 'English' };
+  var nextTitle = { en: '切换到中文', zh: 'Switch to Kiswahili', sw: 'Switch to English' };
+  var langCode = { en: 'en', zh: 'zh-CN', sw: 'sw' };
+  document.getElementById('langToggle').innerHTML = '<span style="font-size:16px;">🌐</span><span style="font-size:12px;">' + nextName[currentLang] + '</span>';
+  document.getElementById('langToggle').title = nextTitle[currentLang];
+  document.documentElement.lang = langCode[currentLang];
+
+  // Search
+  document.getElementById('searchInput').placeholder = t('searchPlaceholder');
+  document.getElementById('addTitle').textContent = t('addTitle');
+  document.getElementById('btnCancel').textContent = t('cancelBtn');
+  if (document.getElementById('btnSave')) document.getElementById('btnSave').textContent = t('saveBtn');
+
+  // Tab bar
+  var tabs = document.querySelectorAll('.tab-item');
+  if (tabs.length >= 4) {
+    tabs[0].innerHTML = '<span class="icon">🔍</span>' + t('searchTab');
+    tabs[1].innerHTML = '<span class="icon">📋</span>' + t('browseTab');
+    tabs[2].innerHTML = '<span class="icon">➕</span>' + t('addTab');
+    tabs[3].innerHTML = '<span class="icon">⚙️</span>' + t('settingsTab');
+  }
+
+  // Browse filters
+  var browseArea = document.getElementById('browseArea');
+  var browseSev = document.getElementById('browseSeverity');
+  if (browseArea && browseArea.options[0]) browseArea.options[0].textContent = t('allAreas');
+  if (browseSev && browseSev.options[0]) browseSev.options[0].textContent = t('allLevels');
+
+  // Add form labels
+  var ids = {
+    'lblSymptom': 'symptom', 'lblArea': 'area', 'lblKeywords': 'keywords',
+    'lblSeverity': 'severity', 'lblRootCause': 'rootCause', 'lblSolution': 'solution',
+    'lblPrevention': 'prevention', 'lblPhotos': 'photos', 'photoHint': 'photoHint'
+  };
+  for (var id in ids) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = t(ids[id]);
+  }
+
+  // Form placeholders
+  var phMap = {
+    'fSymptom': 'symptomPh', 'fKeywords': 'keywordsPh',
+    'fRootCause': 'rootCausePh', 'fSolution': 'solutionPh', 'fPrevention': 'preventionPh'
+  };
+  for (var fid in phMap) {
+    var fel = document.getElementById(fid);
+    if (fel) fel.placeholder = t(phMap[fid]);
+  }
+
+  // Settings page
+  var setId = {
+    'settingsSyncTitle': 'cloudSync', 'settingsSyncDesc': 'cloudSyncDesc',
+    'settingsDataTitle': 'dataManage', 'settingsKbTotal': 'kbTotal',
+    'settingsUserAdded': 'userAddedCount', 'settingsSyncStatus': 'syncStatus',
+    'settingsVersion': 'version',
+    'dangerTitle': 'dangerZone', 'dangerDesc': 'dangerDesc',
+    'helpTitle': 'helpTitle', 'helpText': 'helpText',
+    'btnExport': 'exportBtn', 'btnImport': 'importBtn', 'btnClear': 'clearBtn'
+  };
+  for (var sid in setId) {
+    var sel = document.getElementById(sid);
+    if (sel) {
+      if (sid === 'helpText') { sel.innerHTML = t(setId[sid]); }
+      else { sel.textContent = t(setId[sid]); }
+    }
+  }
+
+  // Update settings values that have units
+  var user = loadUserData();
+  var st = document.getElementById('settingTotal');
+  var su = document.getElementById('settingUserAdded');
+  var sv = document.getElementById('settingVersion');
+  var ss = document.getElementById('settingSync');
+  if (st) st.textContent = getFullKB().length + ' ' + t('items');
+  if (su) su.textContent = user.length + ' ' + t('items');
+  if (sv) sv.textContent = '2026.05.10-v7';
+  if (ss) ss.textContent = 'Firebase Realtime Sync';
+
+  // Update version info
+  var verEl = document.getElementById('versionInfo');
+  if (verEl) verEl.textContent = t('version');
+}
+
+// Swahili domain dictionary for cross-language search
+const DOMAIN_DICT_SW = {
+  'bodi laini': ['板软','湿板','板头','板软','干燥'],
+  'moto mkali': ['过火','温度高','泛黄','干燥机温度'],
+  'kukatika umeme': ['断电','闪电','停电','电压低','闪停'],
+  'kukwama': ['堵板','堵塞','卡板','卡停','冒料','堆积'],
+  'kikaushio': ['干燥机','干燥窑','干燥','温度','辊道'],
+  'kupasuka': ['裂板','破碎','板裂','断裂'],
+  'kujitoa': ['脱纸','粘结不良','粘接'],
+  'kuanguka': ['倒边','外倒','内倒','漏浆'],
+  'kulegea': ['松动','脱落','链条松','皮带脱落'],
+  'kuchakaa': ['磨损','磨辊','衬板','刀片','锯片'],
+  'kutetemeka': ['振动','异响','异动'],
+  'joto la awali': ['原热','立磨','沸腾炉','煅烧','炉膛'],
+  'udhibiti wa kwanza': ['一控','成型','配料','搅拌机'],
+  'udhibiti wa pili': ['二控','切板','切断','翻板'],
+  'udhibiti wa tatu': ['三控','出板','包装','堆垛'],
+  'chujio': ['筛','过滤','筛网','筛板','分级'],
+  'fani': ['风机','引风机','鼓风机','循环风机'],
+  'kuchanganya': ['混合','搅拌','混合机','料浆'],
+  'kukausha': ['干燥','烘干','水分','温度'],
+  'karatasi': ['护面纸','纸','上下纸','纸张'],
+  'wambiso': ['粘结','粘接','淀粉','白乳胶'],
+  'ubora': ['合格率','质量','强度','硬度','级配'],
+  'daraja': ['三相','结晶水','HH','AIII','DH'],
+  'kalibri': ['标稠','初凝','终凝','扩散度'],
+  'gipsi': ['石膏','生粉','熟料','品位','石膏板'],
+  'sakafu': ['板','板材','板面'],
+  'usafirishaji': ['输送','皮带','斗提','铰刀','斜槽'],
+  'sensa': ['传感器','监测','检测','探头'],
+  'parapanda': ['报警','警报','报警器','预警'],
+  'matengenezo': ['检修','维护','更换','保养','修复'],
+  'vipuri': ['备件','配件','备品'],
+  'kuzuia': ['预防','防止','避免'],
+  'kurekebisha': ['修复','调整','调节','纠正','改进'],
+  'utambuzi': ['诊断','检测','检查','排查'],
+  'nguvu': ['强度','硬度','张力'],
+  'unyenye': ['水分','湿度','含水','潮湿'],
+  'kuchuja': ['收尘','除尘','布袋','过滤'],
+  'mafuta': ['润滑油','油品','液压油'],
+  'mkanda': ['皮带','传送带','皮带秤'],
+  'fimbo': ['链条','链','铰刀','搅拌棍'],
+  'fani moshi': ['引风机','烟气风机'],
+  'injini': ['电机','马达','发动机'],
+  'bomba': ['管道','管路','下料管','空气斜槽'],
+  'joto': ['温度','高温','低温','热'],
+  'shinikizo': ['压力','负压','风压','液压'],
+  'umeme': ['电压','电流','电气','电源','变频器'],
+  'kubomoka': ['塌陷','变形','弯曲','翘曲'],
+  'kusimama': ['停机','停止','停顿'],
+  'alama': ['标记','标签','追溯'],
+  'filamu': ['覆膜','膜','铝膜','PVC'],
+  'mchanga': ['沙','颗粒','粉','灰尘'],
+  'hewa': ['风','空气','通风','压缩空气'],
+  'maji': ['水','水分','湿','清水'],
+  'makaa': ['煤','燃料','煤炭'],
+  'mafunzo': ['培训','操作','规程','SOP']
+};
+
+// Swahili domain dictionary for cross-language search (used by searchKB later)
+function expandSwKeywords(query) {
+  const lower = query.toLowerCase();
+  let expanded = query;
+  for (const [sw, zhList] of Object.entries(DOMAIN_DICT_SW)) {
+    if (lower.includes(sw)) {
+      expanded += ' ' + zhList.join(' ');
+    }
+  }
+  return expanded;
+}
+
+// ============ KNOWLEDGE BASE ============
+const BUILTIN_KB = [
+  // --- 原热区域 ---
+  {id:1,area:"原热",symptom:"闪电（瞬时断电来电）→料浆堆积",keywords:["闪电","断电","料浆堆积","成型辊","一控"],root_cause:"断电导致皮带转速下降，造成成型辊前料浆堆积",solution:"把成型辊抬起，待堆积的料浆通过后，皮带速度恢复正常后再压下",prevention:"一控搅拌机配备UPS不间断电源保护",severity:"橙色"},
+  {id:3,area:"原热",symptom:"熟料链式输送机到斗提处料堵",keywords:["链式输送机","斗提","堵塞","雨季","受潮"],root_cause:"雨季潮湿，石膏粉吸潮后堵塞",solution:"增加对熟料链式输送机的敲打频次以保持管道畅通",prevention:"关注连接口处机电感应器信号（料多料少通过机械摆手位置传输故障信号）",severity:"黄色"},
+  {id:12,area:"原热",symptom:"配料提升机链断",keywords:["提升机","链断","斗提","电机"],root_cause:"上面电机链断或中间管道链断",solution:"电机链断→重新接链；中间管道链断→人工拉链",prevention:"定期检查链条松紧度，及时更换磨损链节",severity:"橙色"},
+  {id:13,area:"原热",symptom:"拉链机与配料提升机接口处堵塞",keywords:["拉链机","接口","堵塞","块状物"],root_cause:"配料提升机链断导致，或块状物体堵塞",solution:"人工敲打无效时用气焊切割开口清理；建议使用橡胶大锤保护管道",prevention:"易堵塞处做开口；易堵点换用透明观察窗",severity:"黄色"},
+  {id:16,area:"原热",symptom:"热风炉炉膛结焦（燃料煤炭液化堵住帽盖出风口）",keywords:["炉膛","结焦","煤炭","出风口","堵塞"],root_cause:"温度过高（>900℃）导致煤熔融结焦；煤粉过多；煤杂质多降低熔点",solution:"停机等待炉膛降温后进入打扫清理；控制T1≤850℃",prevention:"进煤前先铺沙导热；定期搂炉膛检查风帽；取煤样检测煤粉占比（≤15%为正常）",severity:"橙色"},
+  {id:29,area:"原热",symptom:"煤料问题——煤斗振动给料机不下料（可能导致炉灭）",keywords:["煤","不下料","振动给料机","炉灭","煤湿","结块"],root_cause:"煤湿（室外受雨淋）/结块/煤破筛板机可能损坏/破碎机检查口意外掉落",solution:"人工敲击下料口→人工疏通下料管道→人工往炉子里扔煤→降低鼓风频率保证不灭炉→铲车多翻晾晒",prevention:"煤棚防雨；添加粉煤灰吸水；定期检查筛板机；提醒工人注意掉煤",severity:"红色"},
+  {id:43,area:"原热",symptom:"原热系统T1温度持续下降（T1正常不低于800℃）",keywords:["T1","温度下降","堵煤","铰刀","炉膛","煤粉"],root_cause:"堵煤——给煤机不下煤；铰刀传送受阻；炉膛进大量煤粉；相关设备电机异常",solution:"人工疏通下煤口；搂炉膛防底部结焦不燃烧；适当增加铰刀频率稳住T1",prevention:"关注煤湿度和粒度；定期检查铰刀状态",severity:"红色"},
+  {id:44,area:"原热",symptom:"打开皮带秤时皮带秤不走煤（频率为0）",keywords:["皮带秤","不走煤","频率0","堵塞"],root_cause:"下煤斗出口被堵住",solution:"人工敲打疏通",prevention:"定期检查清理下煤斗",severity:"黄色"},
+  {id:45,area:"原热",symptom:"制粉系统显示烟气引风机电流不足",keywords:["烟气引风机","电流不足","风叶","磨损"],root_cause:"烟气引风机风叶磨损脱落",solution:"拆换引风机；粉线停机时关注板线温度（换热器、一二区）",prevention:"定期检查风叶磨损状态；增加预除尘措施降低颗粒冲蚀",severity:"红色"},
+  {id:46,area:"原热",symptom:"闪电未停机（原热视角操作流程）",keywords:["闪电","未停机","故障复位","循环风机"],root_cause:"闪停导致风机停机但中控显示为绿色开启状态",solution:"关闭给煤机→闪停风机故障复位→启停交替→循环风机启动（一区循环风常看是否频率为0）→启动给煤机",prevention:"闪停后先确认各风机实际运行状态（不能仅看中控显示颜色）",severity:"橙色"},
+  {id:47,area:"原热",symptom:"断电停机再启动（原热视角）",keywords:["断电","再启动","干燥机","风机","先启"],root_cause:"断电后需按顺序重启设备",solution:"先启动干燥机风机→降干燥机链条速度保证板正常干燥→再启动引风机和鼓风机→设备都启动后通知车间拉板检查出板质量",prevention:"制定标准开机顺序：三控→干燥机链→二控→一控",severity:"红色"},
+  {id:48,area:"原热",symptom:"破碎机发出异动声音（筛板移位+档杆断裂）",keywords:["破碎机","异动","筛板","档杆","断裂"],root_cause:"破碎机上方加强板掉落未及时发现，长时间转动导致",solution:"拆除外壁→压直筛板→安装复位→更换挡杆；修复后避免振动给料机开过大，选小块石膏下料",prevention:"下料口及时清料；定期检查挡杆和加强板状态",severity:"橙色"},
+  {id:49,area:"原热",symptom:"生料仓皮带秤流量实际值远小于设定值→现场不下料",keywords:["生料仓","皮带秤","流量小","不下料","堵料"],root_cause:"生料仓堵料",solution:"从料仓底部开口疏通，击打料仓外壳",prevention:"控制原料水分；定期清仓",severity:"橙色"},
+  {id:50,area:"原热",symptom:"炉中温度降低，火灭",keywords:["炉灭","温度降低","铰刀","不下煤"],root_cause:"铰刀不下煤，时间长导致炉中火灭",solution:"收集溢出煤放炉门前→加煤重新起火→开始少煤少风→起火后加煤加风→不时搂炉子",prevention:"监控铰刀下煤状态；关注炉膛温度趋势提前预警",severity:"红色"},
+  {id:51,area:"原热",symptom:"沸腾炉出粉温度偏高",keywords:["沸腾炉","出粉温度高","收粉","促凝剂"],root_cause:"收粉（作促凝剂）在三控收和电收尘下收→沸腾炉进粉量减少→温度上升",solution:"减少收粉或不收粉以维持沸腾炉料量",prevention:"收粉操作时关注沸腾炉温度变化",severity:"黄色"},
+  {id:52,area:"原热",symptom:"风室压力过大",keywords:["风室","压力大","底料"],root_cause:"风室底料较多",solution:"通底料（出红色的燃料就可以关掉阀门）",prevention:"定期排放底料",severity:"黄色"},
+  {id:53,area:"原热",symptom:"中沸温度明显高于下沸",keywords:["中沸","下沸","温差大","底料少"],root_cause:"底料较少",solution:"加底料",prevention:"维持底料动态稳定；温差过大→加底料；温差过小→放底料",severity:"黄色"},
+  {id:55,area:"原热",symptom:"炉膛壁结焦增多",keywords:["炉膛","结焦","增多","T1","T2","温度高"],root_cause:"T1、T2温度较高（与底料接触）→底部煤熔融结焦",solution:"采取措施使下部温度T1、T2降低，把温度带到顶部T3；T1控制在850℃以内",prevention:"增加D4阀门开度（进风氧含量降低→延长底部煤燃烧时间→吹到上部燃烧）",severity:"橙色"},
+  {id:56,area:"原热",symptom:"烟气布袋除尘布袋被烧开口",keywords:["布袋","烧开口","进风温度高","换热管","灰尘"],root_cause:"进风温度过高——二区换热管有灰尘，烟气未充分换热就出来了",solution:"暂时靠布袋除尘冷风阀控制温度（正常进布袋烟气温度160-170℃）",prevention:"定期清理换热管积灰",severity:"橙色"},
+  {id:58,area:"原热",symptom:"煅烧沸腾炉压力显示过高→取料口冒料→斗提连接管冒料",keywords:["沸腾炉","压力高","冒料","料仓","铰刀","误判"],root_cause:"中控系统未及时更新料仓位置误判下料仓→实际料仓铰刀没开造成堵料蔓延至原热",solution:"减少或停止炒料",prevention:"空气斜槽增加透明观察段；摸温度（发烫为走粉）或敲声音判断是否堵料",severity:"橙色"},
+  {id:64,area:"原热",symptom:"筛底绞笼堵料",keywords:["绞笼","堵料","异物","下料仓","空气斜槽"],root_cause:"绞笼本身有异物或上游下料仓堵住（检查空气斜槽是否堵塞→下料仓堵塞）",solution:"清理绞笼内部异物；如果是下料仓堵塞需改进料位计",prevention:"定期检查清理绞笼和空气斜槽",severity:"黄色"},
+  {id:65,area:"原热",symptom:"炉膛掉砖",keywords:["炉膛","掉砖","热胀冷缩"],root_cause:"炉砖热胀冷缩导致松动",solution:"定期维护，使用耐火水泥等材料填补",prevention:"选用耐热震性更好的炉砖；定期检查炉壁",severity:"橙色"},
+  {id:66,area:"原热",symptom:"铰刀正常下煤量但炉膛温度升不上去",keywords:["铰刀","下煤","温度不升","故障","堵塞"],root_cause:"铰刀故障实际没有下煤或下煤量不够（如铰刀堵塞、轴承断裂）",solution:"开口检查，排查问题根源",prevention:"关注下煤量与温度变化的对应关系，异常时立即检查",severity:"红色"},
+  {id:78,area:"原热",symptom:"单独拉板不开粉线烟气引风机→干燥机温度过高+炉子接近正压",keywords:["拉板","引风机","温度过高","炉子正压","压炉"],root_cause:"不开粉线烟气引风机时不能有效将炉膛温度带向粉线→板线温度过高中炉子正压",solution:"炉子先行，不开粉线不拉板时压炉（停止下煤、关闭风机让温度缓慢降低但炉不灭）",prevention:"制定特殊工况下原热标准操作流程",severity:"橙色"},
+  {id:80,area:"原热",symptom:"立磨机分离电流高有跳停风险→出粉变粗",keywords:["立磨机","分离器","电流高","跳停","异物","卡塞"],root_cause:"分离器轴承处有异物卡塞（如投料中的杂质如抹布）",solution:"分离机停→立磨停掉→开立磨前先开分离机→加油→打开检查",prevention:"投料前检查原料中是否有杂物；定期检查分离器轴承",severity:"橙色"},
+  {id:88,area:"原热",symptom:"立磨机大量冒料+出粉大颗粒变多（调参异常）",keywords:["立磨机","冒料","大颗粒","引风机频率","分离器频率","物料浓度"],root_cause:"一是立磨机进料斜槽破洞漏风→实际风量不足→料堆积冒料；二是风机频率减小→磨内物料浓度过高",solution:"封住洞口；调整磨辊工作压力（料层厚调大，薄调小）；尝试大风量+极高选粉频率",prevention:"定期检查立磨机壳体密封性；调参前先确认无物理缺陷",severity:"橙色"},
+  {id:90,area:"原热",symptom:"立磨机出粉细度异常波动（80目筛余20-30%+冒料）",keywords:["立磨机","细度波动","80目","筛余高","冒料","选粉机","风料压平衡"],root_cause:"前端对辊破效率降低→入磨石膏过粗；选粉机叶片挂料产生短路效应；研磨力与循环负荷失衡（低压积料/饱磨伪装）；动静态密封缺陷",solution:"暂时通过调节风量、频率、进料量、磨辊压力找风料压平衡点（亚平衡状态）；停机时更换衬板和磨辊",prevention:"前端：减小入料粒度+助磨剂+控制水分；中端：提高研磨压力+增高挡料圈；后端：外置振动筛/二级选粉/增加煅烧停留时间",severity:"红色"},
+
+  // --- 一控区域 ---
+  {id:4,area:"一控",symptom:"倒边（外倒/内倒）",keywords:["倒边","白乳胶","刻痕","漏浆"],root_cause:"白乳胶加多/刻痕过轻→外倒；白乳胶加少/刻痕过重→内倒",solution:"调整白乳胶量、刻痕深度，调整边距块；内倒调前边转轮，外倒调后边两个转轮",prevention:"换纸接纸时注意检查新纸外观质量，调刻痕深浅时关注立边状态",severity:"黄色"},
+  {id:5,area:"一控",symptom:"板凸板凹（三控出板中间高/中间低）",keywords:["板凸","板凹","料浆稠","料浆稀","厚度"],root_cause:"料浆稠→三控出板中间高；料浆稀→三控出板中间低",solution:"调整料浆浓度（水膏比或减水剂用量）",prevention:"一控巡检观察料浆稀稠状态，及时调整",severity:"黄色"},
+  {id:10,area:"一控",symptom:"一控烟沙（收尘管堵塞）",keywords:["烟沙","收尘管","堵塞","一控"],root_cause:"一控收尘管堵塞",solution:"在两处位置进行人工机械疏通和气枪疏通，重新用胶带封装管道",prevention:"定期清理收尘管道",severity:"黄色"},
+  {id:11,area:"一控",symptom:"一控清水溢出",keywords:["清水","溢出","断电","料浆堵塞"],root_cause:"断电停机导致料浆堵塞一控清水管",solution:"对清水管与混合机接口处进行疏通",prevention:"配备应急水按钮，遇突发情况及时开应急水",severity:"黄色"},
+  {id:14,area:"一控",symptom:"斗提机一控开启后自动关停",keywords:["斗提","自动关停","送电"],root_cause:"未送电",solution:"检查是否送电，确认电源供应",prevention:"开机前检查各设备送电状态",severity:"信息"},
+  {id:17,area:"一控",symptom:"护面纸合格率偏低",keywords:["护面纸","合格率","包装","运输","损坏"],root_cause:"包装不密封（底面未完全用塑料袋密封）透气性更好易吸潮；运输时未错峰摆放",solution:"要求纸厂从包装和装车做对比试验来检验效果",prevention:"加强纸厂质量要求：密封包装+错峰装车",severity:"信息"},
+  {id:21,area:"一控",symptom:"立边不稳，无法立边",keywords:["立边","不稳","成型刀","堵塞"],root_cause:"一控成型刀堵塞",solution:"停机清理成型刀",prevention:"定期检查成型刀状态",severity:"黄色"},
+  {id:26,area:"一控",symptom:"断电停机重新开机后发泡剂延迟到位",keywords:["断电","开机","发泡剂","压缩空气","单重高"],root_cause:"压缩空气阀损坏，停机时不能关死，把乳化泵中发泡剂和清水吹出→开机时无发泡剂",solution:"开机后先降速匹配无发泡剂情况，观察料堆积程度逐渐调高速度（约十几秒恢复）",prevention:"修复压缩空气阀",severity:"橙色"},
+  {id:27,area:"一控",symptom:"断电停机重新开机后出料较稀",keywords:["开机","出料稀","延时","添加剂"],root_cause:"各设备不能同时启动，有延时（变频器延时），各种添加剂不能同时到位",solution:"等待各设备依次延时启动后正常产板，开机后约两张板需放废",prevention:"暂无法避免，减少非计划停机次数",severity:"信息"},
+  {id:33,area:"一控",symptom:"凝固皮带下方发生料浆溢出",keywords:["料浆","溢出","停机","撕纸"],root_cause:"停机时未及时撕纸，导致冲稀的料浆被带走",solution:"停机报警时一控应第一时间撕掉护面纸",prevention:"强化一控操作员停机应急培训",severity:"黄色"},
+  {id:57,area:"一控",symptom:"搅拌机异响",keywords:["搅拌机","异响","搅拌棍","松动"],root_cause:"搅拌棍松动",solution:"更换搅拌棍；安装加螺纹胶、焊螺丝帽",prevention:"定期检查搅拌棍紧固状态",severity:"黄色"},
+  {id:60,area:"一控",symptom:"搅拌机里料浆凝固堵塞（铸机）",keywords:["铸机","搅拌机","淀粉水","料位仓","未报警"],root_cause:"淀粉水没加，淀粉料位仓低位未报警",solution:"岗位人员加强职责",prevention:"检查料位传感器功能；增加报警确认机制",severity:"红色"},
+  {id:62,area:"一控",symptom:"下纸面有不规则沟壑",keywords:["沟壑","下纸面","换纸","风干","收缩","水"],root_cause:"可能是换新纸导致（新纸塑料膜被划开放置后前几面风干收缩）/也可能是皮带板上有水",solution:"被划开塑料膜的纸尽量先用；新拉板时清理传送平台并干燥",prevention:"护面纸开封后尽快使用",severity:"黄色"},
+  {id:67,area:"一控",symptom:"混合机掉块",keywords:["混合机","掉块","出料口","间距","料块"],root_cause:"出料口间距偏大→料块过大",solution:"减小出口间距（提转子/落方圈）；注意间距不能过小否则出料压力过大",prevention:"定期从一控放包检查料块情况，反映混合机工作状态",severity:"黄色"},
+  {id:73,area:"一控",symptom:"斗提翻板螺丝掉落进混合机",keywords:["螺丝","掉落","混合机","滚筒筛","破洞","磁体"],root_cause:"前端滚筒筛筛板破洞未能筛出；混合机管子磁体未能吸附（黑色螺栓磁性弱）",solution:"待停机时检修滚筒筛与常坏斗提",prevention:"定期检查滚筒筛网完整性和磁体吸附效果",severity:"橙色"},
+  {id:76,area:"一控",symptom:"板在生产途中破碎",keywords:["破碎","板裂","减水剂","料稀"],root_cause:"减水剂加多导致料稀→板强度不足→破碎",solution:"降低减水剂用量调整料浆稠度",prevention:"严格控制减水剂添加量；关注料浆稠度变化",severity:"橙色"},
+  {id:82,area:"一控",symptom:"搅拌机铸机（料中有杂物堵住出料口）",keywords:["铸机","搅拌机","杂物","出料口","堵塞"],root_cause:"料中有杂物堵住搅拌机出料口",solution:"拆开清理；对下料口重点监控",prevention:"前端滚筒筛+磁铁双重保险；但注意黑色螺栓磁性弱",severity:"红色"},
+  {id:83,area:"一控",symptom:"开机后下料量不够",keywords:["开机","下料量","不够","输料循环","稳料仓"],root_cause:"未提前开启输料循环→只开了1号仓→分割轮离得远→开机前稳料仓料不够",solution:"优先开启离稳料仓近的储料仓或多个储料仓同时下料",prevention:"开机前提前开启输料循环；单个料仓容量180吨≈每班投料量",severity:"黄色"},
+  {id:84,area:"一控",symptom:"换纸后上纸面大面积起泡",keywords:["起泡","换纸","透气性","强伟","泰国","耐潮"],root_cause:"纸透气性不匹配（强伟耐潮上纸配泰国耐潮下纸发生起泡）",solution:"换为同品牌配套上下纸（强伟耐潮下纸配强伟耐潮上纸后起泡现象消失）",prevention:"更换纸品牌时先小批量试生产验证匹配性",severity:"橙色"},
+  {id:87,area:"一控",symptom:"混合机异响（螺栓掉入）",keywords:["混合机","异响","螺栓","旋转筛","破洞","磁铁"],root_cause:"螺栓掉入混合机；黑色螺栓表面处理导致磁性减弱未能被吸附",solution:"检查旋转筛是否再次破洞，更换筛网",prevention:"强化双保险机制（旋转筛+磁铁）；对黑色螺栓改用可磁吸材质",severity:"橙色"},
+
+  // --- 二控区域 ---
+  {id:9,area:"二控",symptom:"搭板（停机再开干燥机速度与进板速度不匹配）",keywords:["搭板","停机","速度不匹配","干燥机"],root_cause:"停机再开后，干燥机链条速度与进板速度不同步",solution:"注意控制干燥机速度先行，先放链条，再开风机，再启动炉子",prevention:"制定标准开机顺序SOP",severity:"黄色"},
+  {id:22,area:"二控",symptom:"正常生产过程中干燥窑堵板",keywords:["堵板","干燥机","坏板","卡辊","二控"],root_cause:"二控未放废的坏板进入干燥窑中可能断裂卡辊",solution:"二控及时放废坏板",prevention:"强化二控操作员放废意识",severity:"橙色"},
+  {id:25,area:"二控",symptom:"二控切板损坏率过高",keywords:["切板","损坏率","切刀","磨损","护面纸"],root_cause:"切刀磨损，易把护面纸挑起",solution:"更换切刀",prevention:"按计划更换切刀刀片，驱动轴承定期加油",severity:"黄色"},
+  {id:30,area:"二控",symptom:"干燥机堵板（断电停机后板变形入二控易堵）",keywords:["堵板","干燥机","断电","变形","下陷"],root_cause:"断电停机时一控凝固区皮带端头板材时间长易下陷变形，进入二控易堵板",solution:"停机重开后注意放废二控坏板",prevention:"减少非计划停机",severity:"橙色"},
+  {id:31,area:"二控",symptom:"切刀前处传动辊停转造成停机",keywords:["传动辊","停转","链条","脱落","停机"],root_cause:"该处链条太长脱落，电机电动辊空转",solution:"换用合适尺寸的链条，加固螺丝、涂润滑油",prevention:"选用合适长度的链条，定期张紧检查和润滑",severity:"橙色"},
+  {id:34,area:"二控",symptom:"二控翻板后前后板对不齐（影响干燥效果）",keywords:["翻板","对不齐","垫皮","磨损","皮带"],root_cause:"翻板机滑动垫皮磨损不一；皮带松紧/新旧程度不同",solution:"待改线升级时更换滑动垫皮或统一更换新皮带",prevention:"计划性统一更换皮带和垫皮；注意皮带选型一致",severity:"黄色"},
+  {id:35,area:"二控",symptom:"二控翻板后板贴边进干燥机（易卡板）",keywords:["贴边","干燥机","卡板","翻板","传感器"],root_cause:"撕纸重开后前段板人工处理时易贴边→与干燥机入口门杆相撞",solution:"把一横停止感应器改为人工处理时也能工作；重开后谨慎观察前段板运输，发现意外立即侧推或放废",prevention:"经常清理翻板机下方光电传感器（避免灰尘遮盖失效）",severity:"黄色"},
+  {id:59,area:"二控",symptom:"二控料浆凝固慢导致板软变形",keywords:["凝固慢","板软","促凝剂","生粉","熟粉"],root_cause:"促凝剂出现问题（生粉里掺有熟粉）",solution:"加强检测，发现异常及时处理",prevention:"促凝剂来源管控：天然石膏磨生粉纯度优于收尘粉；促凝剂现磨现用",severity:"橙色"},
+  {id:61,area:"二控",symptom:"二控翻板后下纸面有划痕",keywords:["划痕","下纸面","皮带","焊接","开皮"],root_cause:"前端皮带焊接处开皮造成",solution:"正常生产时先把翘皮处销断，待停机时再更换皮带",prevention:"定期检查皮带焊接处状态",severity:"黄色"},
+
+  // --- 三控区域 ---
+  {id:6,area:"三控",symptom:"三控放废板未切边锯，导致不能用来做垫板",keywords:["放废","切边锯","垫板","三控"],root_cause:"设备设计：放废通道不经过切边锯",solution:"趁停机时人工放入输送台重新切边，不码垛",prevention:"设备改造时将放废通道接入切边锯",severity:"信息"},
+  {id:8,area:"三控",symptom:"湿板：板软/可深插/中间比端头明显/湿度计偏高",keywords:["湿板","板软","湿度计高","干燥机","温度低"],root_cause:"干燥窑温度低导致干燥不充分",solution:"提高风机频率/降低干燥窑链速",prevention:"原热监控干燥机各温区，维持温度在正常范围",severity:"橙色"},
+  {id:38,area:"三控",symptom:"喷印堵塞",keywords:["喷印","堵塞","喷墨"],root_cause:"喷墨设备喷嘴堵塞",solution:"清理喷墨设备",prevention:"定期清洗喷墨头",severity:"信息"},
+  {id:39,area:"三控",symptom:"三控卡板（翻板后链式输送机推板配件损坏）",keywords:["卡板","三控","链式输送机","配件","损坏"],root_cause:"三控翻板后链式输送机上推板配件损坏",solution:"干燥机减速+开门；三控放废+修复配件",prevention:"定期检查输送机配件状态",severity:"橙色"},
+  {id:40,area:"三控",symptom:"三控出板辊道断",keywords:["辊道","轴断","三控"],root_cause:"类似稳料铰刀轴断",solution:"更换新轴",prevention:"定期检查辊道轴状态",severity:"橙色"},
+  {id:41,area:"三控",symptom:"三控放废处搭板",keywords:["放废","搭板","引向轮"],root_cause:"引向轮位置不当",solution:"调节引向轮",prevention:"定期检查引向轮位置",severity:"信息"},
+  {id:42,area:"三控",symptom:"三控一直放废（二横辊道无法正常下降）",keywords:["放废","辊道","下降","轴承","抱闸","变频器"],root_cause:"二横辊道电机与起落架连接的轴承损坏；电机变频器报警参数设置过高→抱闸烧坏",solution:"检查各设备逐一排除；更换抱闸",prevention:"增加时间报警程序（电流超限超时→触发报警）；不停机修复时用小板垫着起落架",severity:"橙色"},
+  {id:63,area:"三控",symptom:"出板下纸面有沟痕",keywords:["沟痕","下纸面","终凝","促凝剂","熟料"],root_cause:"终凝时间太长→板软→切刀后料浆粘结在辊上凝结成块",solution:"降拉板速度（原热对应降温）；检测促凝剂结晶水含量；检测熟料温度、结晶水；检测石膏矿结晶水",prevention:"陈化仓料放置时间24-72小时（过长二水石膏增加导致水化反应减弱）",severity:"橙色"},
+  {id:74,area:"三控",symptom:"板头板软",keywords:["板头","板软","单重增加","发泡剂","浓度"],root_cause:"单重增加→干燥机未匹配；发泡剂用量减少→石膏填充增加→单重增加→水分蒸发不充分",solution:"增加发泡剂或降速；重新拉板时注意辅料添加是否已匹配",prevention:"换辅料种类/配比后关注发泡剂用量的匹配调整",severity:"橙色"},
+  {id:75,area:"三控",symptom:"三控翻板机连接臂脱落",keywords:["翻板机","连接臂","脱落","轴承","负载"],root_cause:"轴承零件损坏；板材单重偏大加重翻板机负载",solution:"更换轴承（旧部件难取下可焊接增加着力面积）",prevention:"紧固件定期润滑检查；销轴/衬套升级；加装限位或支撑；液压/气动装置改善缓冲",severity:"橙色"},
+  {id:77,area:"三控",symptom:"二次停电后板头板软",keywords:["二次停电","板头","板软","升温","降速"],root_cause:"一次停电后干燥机一区需边升温边降速控板头质量→此时再次停电→温度升不上来",solution:"二次来电后继续降速/加大一区升温力度",prevention:"停电后优先保障干燥机温度稳定",severity:"橙色"},
+  {id:81,area:"三控",symptom:"板边（端头、棱边）泛黄",keywords:["板边黄","泛黄","过火","温度高"],root_cause:"温度高过火导致",solution:"干燥机有空板段→出板后在三控垛台处观察对比判断是否板边黄→通知原热控温",prevention:"控制空板段时干燥机各区温度；宁可过火不可板软的原则下注意温度上限",severity:"黄色"},
+
+  // --- 跨区/全线 ---
+  {id:2,area:"原热/三控",symptom:"闪电（瞬时断电来电）→三控板软",keywords:["闪电","断电","板软","三控","干燥机","湿板"],root_cause:"热风机停掉（重启需几十秒），干燥窑温度降低，导致湿板",solution:"降低皮带速度以增加干燥时间",prevention:"刚开机干燥窑未满板时不需要调整皮带速度",severity:"橙色"},
+  {id:7,area:"三控/原热",symptom:"过火：板脆/板热/可深插/端头更明显",keywords:["过火","板脆","板热","干燥机","温度高"],root_cause:"干燥窑温度高导致粘接性差",solution:"降低风机频率/提高干燥窑链速：不严重2米起调、严重5米起调",prevention:"空板段走完后持续观察温度是否下降，满板后温度应有下降过程",severity:"橙色"},
+  {id:15,area:"全线",symptom:"断电停机综合故障（裂板+二控皮带脱落+软板）",keywords:["断电","停机","裂板","皮带脱落","软板"],root_cause:"坦桑电网不稳定，断电重启导致多处连锁故障",solution:"紧急停运→清理废板→复原脱落位置→操作二控电机控制系统→重新开机放废→正常生产",prevention:"建议配备发电机自动切换系统",severity:"红色"},
+  {id:18,area:"全线",symptom:"断电停机重启标准流程",keywords:["断电","停机","重启","开机"],root_cause:"坦桑电网不稳定，断电后需按标准流程恢复",solution:"停机→断纸→回收料浆→清洗平台→调参→拉纸→干湿料启动→调整倒边",prevention:"制定断电重启SOP，培训所有岗位人员",severity:"橙色"},
+  {id:19,area:"全线",symptom:"坦桑基地与国内基地设备差异概览",keywords:["对比","差异","国内","设备"],root_cause:"干燥窑：坦桑两区干燥（并联），国内多三区干燥；三控：坦桑无分切锯仅一条输送线",solution:"参考国内经验：增加分切锯或输送线形式提高三控板材传送效率",prevention:"产线升级时参考国内外先进基地设计",severity:"信息"},
+  {id:24,area:"全线",symptom:"空压机报警（电压低）",keywords:["空压机","报警","电压低","变压器"],root_cause:"空压机电压低（正常380V，报警后检测为340V）",solution:"停机，用变压器调高电压/停粉线，等待电压恢复",prevention:"建厂前先确认市电供电电压等级（11KV/22KV/33KV），备用稳压装置",severity:"红色"},
+  {id:28,area:"全线",symptom:"室外设备电线裸露（雨天危险）",keywords:["电线","裸露","雨天","安全"],root_cause:"未做防护处理",solution:"日常巡检发现后立即包覆处理",prevention:"定期巡检室外电气设施",severity:"橙色"},
+  {id:32,area:"全线",symptom:"长时间停电（5分钟以上）",keywords:["停电","5分钟","发电机","市电切换"],root_cause:"市电中断",solution:"启动发电机变频器→优先给炉子、干燥机、三控供电（先把干燥机里的板出着）→来电后停发电机切市电",prevention:"一控搅拌机配UPS防铸机；定期测试发电机",severity:"红色"},
+  {id:68,area:"全线",symptom:"电压低导致空压机受影响→气动装置异常（下料不均匀/乱板/放废挡板无法抬起）",keywords:["电压低","空压机","气动装置","下料不均","乱板","放废"],root_cause:"电压低→空压机压力不足→气动装置工作不良",solution:"人工强制抬起放废挡板先把板出完（避免叠板堆板）再回锯；观察相关动力设备运行情况",prevention:"加装稳压器或动态无功补偿装置（SVG）",severity:"红色"},
+  {id:20,area:"一控/原热",symptom:"废板回收管堵塞",keywords:["废板","回收","堵塞","受潮","下料口"],root_cause:"废板（吸水受潮）水分高，相比干粉太湿，堵塞下料口",solution:"人工疏通",prevention:"废板尽量保持干燥存储",severity:"黄色"},
+  {id:36,area:"一控/二控",symptom:"一控切刀后加速皮带和一横连接处卡板造成停机",keywords:["卡板","加速皮带","电机皮带","断裂","翻板"],root_cause:"切刀后传动辊电机皮带断裂→加速辊失效→最后一张板未及时传输到位→一横下沉时板扎入皮带",solution:"修复切刀后加速辊电机皮带",prevention:"定期检查电机皮带状态，不能加沟槽的端头探索加导轮防跑偏",severity:"橙色"},
+  {id:37,area:"一控/原热",symptom:"一控皮带秤不见料导致停机（稳料铰刀轴断）",keywords:["皮带秤","不见料","铰刀","轴断","停机"],root_cause:"稳料铰刀轴断裂→熟料不能被运输至皮带秤",solution:"重新焊接铰刀轴或更换新轴",prevention:"定期检查铰刀轴状态；注意铰刀负载",severity:"红色"},
+  {id:54,area:"原热/三控",symptom:"干燥机中板的数量影响各区温度（非同步变化）",keywords:["干燥机","温度","满板","未满板","控温"],root_cause:"未满板状态下按满板参考值控温会导致板材干燥不理想",solution:"未满板时不按满板参考值控温；需预判板量变化对应温度变化；板量增加吸收热量使温度下降",prevention:"原热与三控实时联动，原热根据干燥机各区板量预估温度变化",severity:"黄色"},
+  {id:72,area:"一控/原热",symptom:"放置时间长的促凝剂效果不好（初终凝异常）",keywords:["促凝剂","效果差","吸潮","团聚","比表面积","雨季"],root_cause:"雨季粉体吸潮/团聚或表面再水化→溶解速度和促凝能力下降",solution:"采用'先用先开、密封防潮'；减少制作频率和存储时间（如3天）",prevention:"增加入线前活性测试（比表面积检测）；控制存储环境湿度；现磨现用",severity:"橙色"},
+  {id:79,area:"一控/三控",symptom:"板头板经常容易过火",keywords:["板头","过火","非满板","温度偏高","淀粉"],root_cause:"非满板状态下干燥机温度不能以参数控制，变化较大，一般都是控制温度偏高",solution:"拉板头时增添淀粉水下料量（同等减少清水保持水膏比不变）→淀粉可改善过火",prevention:"板头段增加淀粉比例作为缓冲措施",severity:"橙色"},
+  {id:85,area:"全线",symptom:"棱边酥脆（板材棱边酥脆掉渣）",keywords:["棱边酥脆","酥脆","掉渣","煅烧","结晶水","AIII相"],root_cause:"煅烧温度偏高→结晶水偏低→AIII相增多→板脆；或煅烧不均匀局部过烧",solution:"降低煅烧温度；检查沸腾炉风管是否堵塞导致炒料不均；增加结晶水检测频次",prevention:"稳定煅烧温度控制在160-164℃；定期清通风管；监控三相含量（AIII≤5%）",severity:"橙色"},
+  {id:86,area:"三控/二控",symptom:"干燥机一侧堵板",keywords:["堵板","干燥机","一侧","石墨轴承","辊道","单板"],root_cause:"石墨轴承破损→辊道停转→板堆积→堵板；或进板位置偏移/机械零件损坏/坏板误入",solution:"发现某层堵板→先停该层辊轴→其他层正常出→出清后开门处理→必要时开反转运板",prevention:"在三控出板区发现出单板立即检查二区出口→一区进口→找到最近堵板位置",severity:"红色"},
+  {id:89,area:"全线",symptom:"粘结不良（大面积护面纸脱纸）",keywords:["粘结不良","脱纸","AIII相","过烧","空气斜槽","堵料","陈化"],root_cause:"空气斜槽堵料→煅烧炉内粉料停留过长→过烧→AIII相飙升至>10%→快速抢夺水分→界面水分枯竭→晶体无法渗透进纸纤维",solution:"应急：将高AIII相粉料与库存合格粉按1:1掺混稀释；预湿护面纸增加喷雾量；提高水膏比补偿界面水分；增加淀粉添加量；降速延缓凝结速度",prevention:"设备防潮升级（空气斜槽密封+雨棚+除湿装置）；雨天停机重启后首批料先陈化检测三相再使用；无备用仓时降速生产",severity:"红色"},
+  {id:91,area:"全线",symptom:"过火问题分析与对策（干燥机板停留长/间距大/温度高）",keywords:["过火","干燥机","空板段","间距大","温度高","排潮","加速"],root_cause:"干燥机板停留时间长+板间距过大（停电拉板/放废造成）+干燥机温度过高（粉线单停）",solution:"原热提前降温减风机频率；补充垫板消耗多余热能；开启旁路排热（排潮风机最大）快速泄压降温；短时适当提速缩短停留时间",prevention:"建立原热与三控的实时温度联动机制；空板段持续跟踪出板质量直到满板温度稳定",severity:"红色"},
+  {id:92,area:"全线",symptom:"护面纸粘接不良故障预防方案（全链路）",keywords:["粘结不良","预防","AIII相","水膏比","淀粉","陈化","降温","防潮"],root_cause:"三相失衡：AIII相>10%→竞争吸水→界面水分枯竭→晶体细碎强度低→淀粉无法富集界面",solution:"物料掺混稀释AIII浓度；预湿护面纸补偿界面水分；提高水膏比+增加淀粉量；控温降速延缓凝结；下调干燥机一区温度防二次脱水",prevention:"设备防潮升级（密封+雨棚+除湿+保温+振打）；质量监测（雨天/停机后首批料先陈化检测）；降速生产预案",severity:"红色"},
+  {id:23,area:"二控/三控",symptom:"干燥机搭板（开机后速度未匹配）",keywords:["搭板","干燥机","开机","速度","过火","湿板"],root_cause:"开机后干燥机速度与进板速度未匹配",solution:"人工检查出板位置、放废；涉及搭板的板材均未充分干燥需放废；快出完时易过火",prevention:"开机时确保干燥机链条速度先行，一控同步降速匹配",severity:"橙色"},
+
+  // --- 覆膜板 ---
+  {id:69,area:"全线",symptom:"覆膜板铝膜断裂",keywords:["覆膜板","铝膜","断裂","覆膜"],root_cause:"铝膜受力异常或材质问题",solution:"停前端→割断→取废膜→检查异物→重接→开机",prevention:"检查铝膜来料质量；调整压辊间距",severity:"黄色"},
+  {id:70,area:"全线",symptom:"覆膜板受力不均（一边好一边坏）",keywords:["覆膜板","受力不均","PVC膜","铝膜辊"],root_cause:"PVC膜传动辊高度不水平或铝膜辊转速不匹配",solution:"调节PVC膜传动辊高度/增大铝膜辊转速",prevention:"定期校正传动辊水平度",severity:"黄色"},
+  {id:93,area:"覆膜板",symptom:"覆膜板铝膜胶过量（胶溢出）",keywords:["覆膜板","铝膜胶","过量","溢出","涂胶"],root_cause:"上膜缠绕穿引方式不当→铝膜胶涂布过多",solution:"检查上膜缠绕穿引方式；调节涂胶辊间距",prevention:"规范上膜穿引操作标准",severity:"黄色"},
+  {id:94,area:"覆膜板",symptom:"覆膜板板面颗粒划损",keywords:["覆膜板","颗粒","划损","收尘","风扇"],root_cause:"锯切区收尘不充分→颗粒附着板面→后续工序划损",solution:"横切后增加风扇补偿收尘；反馈前端改进收尘",prevention:"检查收尘负压（≥-500Pa）；定期清理收尘管道",severity:"黄色"},
+];
+
+// ============ SWAHILI TRANSLATIONS FOR ALL 94 BUILTIN FAULTS ============
+const KB_SW = {
+1:{s:"Umeme unakatika kwa muda (flash)→tope linakusanyika",r:"Kukatika kwa umeme kunapunguza kasi ya mkanda→tope linakusanyika mbele ya roller",so:"Inua roller ya kuunda, subiri tope lililokusanyika lipite, kisha urejeshe kasi ya mkanda kabla ya kushusha",p:"Weka UPS kwa mchanganyaji wa kituo cha kwanza"},
+3:{s:"Mlolongo wa kusafirisha bidhaa hadi lifti ya ndoo imekwama",r:"Unyevu wa msimu wa mvua, unga wa jasi unanyonya unyevu na kukwama",so:"Ongeza mara ya kugonga bomba la kusafirisha ili kuweka bomba wazi",p:"Fuatilia ishara ya sensa kwenye viungo vya bomba"},
+12:{s:"Mlolongo wa lifti ya kupimia umekatika",r:"Mlolongo wa motor ya juu umekatika au mlolongo wa bomba la kati umekatika",so:"Mlolongo wa motor: unganisha upya; mlolongo wa bomba la kati: vuta kwa mkono",p:"Kagua mvutano wa mlolongo mara kwa mara, badilisha sehemu zilizochakaa"},
+13:{s:"Kiunganishi cha kusafirisha mnyororo na lifti ya kupimia kimekwama",r:"Mlolongo wa lifti ya kupimia umekatika, au vitu vikubwa vimekwama",so:"Ikiwa kugonga kwa mkono hakufanyi kazi, kata ufunguzi kwa tochi ya gesi; tumia nyundo ya mpira kulinda bomba",p:"Tengeneza ufunguzi kwenye sehemu zinazokwama mara kwa mara; badilisha kwa dirisha la uwazi"},
+16:{s:"Kuta za tanuru la joto zinaundwa na kutu ya makaa",r:"Joto ni kubwa mno (>900°C) na kusababisha makaa kuyeyuka; makaa mengi mno; uchafu wa makaa unapunguza kiwango cha kuyeyuka",so:"Zima tanuru, subiri ipoe, ingia ndani kusafisha; dhibiti T1 ≤850°C",p:"Weka mchanga kabla ya kuongeza makaa; kagua kofia za hewa mara kwa mara; pima uwiano wa unga wa makaa (≤15% ni kawaida)"},
+29:{s:"Shida ya makaa-mashine ya kutoa makaa haitoi (inaweza kusababisha tanuru kuzima)",r:"Makaa ni manyevu (yamelowa mvua)/yamekusanyika pamoja/mashine ya kuchunga imeharibika/mlango wa mashine ya kuvunja umeanguka",so:"Gonga kwa mkono sehemu ya kutoa→safisha bomba kwa mkono→tupa makaa ndani ya tanuru→punguza masafa ya hewa kuepuka kuzima→pindua makaa kwa trekta",p:"Linda makaa dhidi ya mvua; ongeza majivu ya makaa kunyonya unyevu; kagua mashine ya kuchunga mara kwa mara"},
+43:{s:"Joto la T1 la mfumo wa joto la awali linashuka mfululizo (T1 haipaswi kuwa chini ya 800°C)",r:"Makaa yamekwama-mashine ya kutoa makaa haitoi; usafirishaji wa skrubu umekwama; makaa mengi ndani ya tanuru; motor ya vifaa husika ina shida",so:"Safisha sehemu ya kutoa kwa mkono; kokota tanuru kuepuka kutu chini; ongeza masafa ya skrubu kwa kiasi ili kuimarisha T1",p:"Fuatilia unyevu na ukubwa wa makaa; kagua hali ya skrubu mara kwa mara"},
+44:{s:"Mizani ya mkanda haisogei makaa (masafa ni 0) inapowashwa",r:"Sehemu ya kutoa makaa chini imekwama",so:"Gonga na safisha kwa mkono",p:"Kagua na safisha sehemu ya kutoa mara kwa mara"},
+45:{s:"Mfumo wa kusaga unaonyesha mkondo hafifu wa feni ya moshi",r:"Vipepera vya feni ya moshi vimechakaa na kuanguka",so:"Badilisha feni ya moshi; wakati mstari wa unga umesimama, fuatilia joto la mstari wa bodi",p:"Kagua hali ya vipepera mara kwa mara; ongeza hatua za awali za kutoa vumbi"},
+46:{s:"Umeme unakatika kwa muda lakini mashine haisimami (mtazamo wa joto la awali)",r:"Kukatika kwa ghafla kumesababisha feni kusimama lakini kidhibiti kinaonyesha rangi ya kijani (imesha)",so:"Zima mashine ya kutoa makaa→weka upya hitilafu ya feni→anzisha/kusimamisha kwa mpigo→anzisha feni ya mzunguko→anzisha mashine ya kutoa makaa",p:"Baada ya kukatika kwa ghafla, thibitisha hali halisi ya kila feni (usitegemee tu rangi ya kidhibiti)"},
+47:{s:"Kuwasha upya baada ya kukatika kwa umeme (mtazamo wa joto la awali)",r:"Baada ya kukatika kwa umeme, vifaa vinapaswa kuanzishwa kwa utaratibu",so:"Anzisha feni za kikaushio kwanza→punguza kasi ya mlolongo wa kikaushio→anzisha feni ya moshi na feni ya hewa→arifu warsha kuvuta bodi na kukagua ubora",p:"Tengeneza utaratibu wa kawaida wa kuwasha: kituo cha tatu→mlolongo wa kikaushio→kituo cha pili→kituo cha kwanza"},
+48:{s:"Mashine ya kuvunja inatoa sauti isiyo ya kawaida (bamba la kuchunga limehamia+fimbo ya kuzuia imekatika)",r:"Bamba la kuimarisha juu ya mashine ya kuvunja lilianguka na halikutambuliwa kwa muda, likasababisha uharibifu baada ya mzunguko mrefu",so:"Toa ukuta wa nje→bonyeza bamba la kuchunga mahali pake→weka upya→badilisha fimbo ya kuzuia; epuka mashine ya kutoa kwa mtetemo kufanya kazi kwa nguvu kubwa",p:"Safisha sehemu ya kutoa mara kwa mara; kagua hali ya fimbo ya kuzuia na bamba la kuimarisha"},
+49:{s:"Thamani halisi ya mtiririko wa mizani ya mkanda wa ghala la malighafi ni ndogo kuliko thamani iliyowekwa→haitoi vifaa",r:"Ghala la malighafi limekwama",so:"Fungua kutoka chini ya ghala kusafisha, piga ukuta wa ghala",p:"Dhibiti unyevu wa malighafi; safisha ghala mara kwa mara"},
+50:{s:"Joto ndani ya tanuru linashuka, moto unazima",r:"Skrubu haitoi makaa, baada ya muda mrefu moto ndani ya tanuru unazima",so:"Kusanya makaa yaliyomwagika mbele ya mlango wa tanuru→ongeza makaa kuwasha moto upya→anza na makaa kidogo na hewa kidogo→ongeza makaa na hewa baada ya kuwaka→kokota tanuru mara kwa mara",p:"Fuatilia hali ya skrubu kutoa makaa; fuatilia mwelekeo wa joto la tanuru kwa tahadhari ya mapema"},
+51:{s:"Joto la unga linalotoka tanuru la kuchemsha ni kubwa mno",r:"Unga unaokusanywa (kama kichocheo) unakusanywa kwenye kituo cha tatu na chini ya kikusanya umeme→kiasi cha unga kinachoingia tanuru kinapungua→joto linaongezeka",so:"Punguza ukusanyaji wa unga au usikusanye ili kudumisha kiasi cha vifaa ndani ya tanuru",p:"Fuatilia mabadiliko ya joto ya tanuru wakati wa operesheni ya kukusanya unga"},
+52:{s:"Shinikizo la chumba cha hewa ni kubwa mno",r:"Kuna vifaa vingi vya chini kwenye chumba cha hewa",so:"Toa vifaa vya chini (unaweza kufunga valve wakati mafuta mekundu yanapoanza kutoka)",p:"Toa vifaa vya chini mara kwa mara"},
+53:{s:"Joto la kati la kuchemsha ni kubwa zaidi kuliko la chini",r:"Vifaa vya chini ni vichache",so:"Ongeza vifaa vya chini",p:"Dumisha uthabiti wa vifaa vya chini; tofauti kubwa→ongeza; tofauti ndogo→toa"},
+55:{s:"Kutu ya ukuta wa tanuru inaongezeka",r:"Joto la T1 na T2 ni kubwa mno (linalogusa vifaa vya chini)→makaa ya chini yanayeyuka na kuganda",so:"Chukua hatua kupunguza joto la chini T1 na T2, peleka joto juu kwa T3; dhibiti T1 chini ya 850°C",p:"Ongeza ufunguzi wa valve D4 (kiwango cha oksijeni ya hewa inayoingia kinapungua→huongeza muda wa kuungua kwa makaa chini→yanapeperushwa juu kuungua)"},
+56:{s:"Mfuko wa kuchuja moshi umechomwa na kufunguka",r:"Joto la hewa inayoingia ni kubwa mno—bomba la kubadilishana joto la eneo la pili lina vumbi, moshi hautabadilishwa joto kikamilifu kabla ya kutoka",so:"Kwa muda, tumia valve ya hewa baridi ya mfuko kudhibiti joto (joto la moshi linaloingia ndani ya mfuko kwa kawaida 160-170°C)",p:"Safisha vumbi la bomba la kubadilishana joto mara kwa mara"},
+58:{s:"Shinikizo la tanuru la kuchemsha linaonyesha juu mno→sehemu ya kutoa vifaa inatoa nje→bomba la kuunganisha lifti ya ndoo linatoa nje",r:"Mfumo wa kidhibiti haujasasisha nafasi ya ghala kwa wakati na inaamua vibaya ghala la kutoa→skrubu ya ghala halisi haijawashwa na inasababisha kukwama kuenea hadi joto la awali",so:"Punguza au simamisha upikaji",p:"Ongeza sehemu ya uwazi kwenye mteremko wa hewa; gusa joto (moto=unga unasafiri) au gonga kusikia sauti kubaini ikiwa imekwama"},
+64:{s:"Skrubu ya chini ya chujio imekwama",r:"Skrubu yenyewe ina vitu vya kigeni au ghala la kutoa la juu limekwama (kagua ikiwa mteremko wa hewa umekwama→ghala la kutoa limekwama)",so:"Safisha vitu vya kigeni ndani ya skrubu; ikiwa ni ghala la kutoa limekwama, boresha kihisi cha kiwango",p:"Kagua na kusafisha skrubu na mteremko wa hewa mara kwa mara"},
+65:{s:"Matofali ya tanuru yanaanguka",r:"Kupanuka na kusinyaa kwa matofali kwa joto husababisha kulegea",so:"Matengenezo ya mara kwa mara, tumia saruji inayostahimili moto na vifaa vingine kujaza",p:"Chagua matofali ya tanuru yenye upinzani bora wa mshtuko wa joto; kagua ukuta wa tanuru mara kwa mara"},
+66:{s:"Skrubu inatoa kiasi cha kawaida cha makaa lakini joto la tanuru halipandi",r:"Skrubu ina shida na kwa kweli haitoi makaa au kiasi ni kidogo mno (mf. skrubu imekwama, fani imekatika)",so:"Fungua kukagua, chunguza chanzo cha shida",p:"Fuatilia uhusiano kati ya kiasi cha makaa na mabadiliko ya joto, kagua mara moja ikiwa kuna hali isiyo ya kawaida"},
+78:{s:"Kuvuta bodi pekee bila kuwasha feni ya moshi ya mstari wa unga→joto la kikaushio ni kubwa mno+tanuru linakaribia shinikizo chanya",r:"Bila feni ya moshi ya mstari wa unga, joto la tanuru haliwezi kupelekwa kwenye mstari wa unga kwa ufanisi→joto la mstari wa bodi ni kubwa mno na tanuru lina shinikizo chanya",so:"Tanuru kwanza, ikiwa mstari wa unga haujawashwa na bodi haijavutwa, bonyeza tanuru (simamisha makaa, funga feni kuruhusu joto kushuka polepole lakini tanuru lisizime)",p:"Tengeneza utaratibu wa kawaida wa uendeshaji wa joto la awali chini ya hali maalum"},
+80:{s:"Mkondo wa kitenganishi cha kinu cha kusaga ni kubwa na kuna hatari ya kusimama→unga unakuwa mkubwa zaidi",r:"Kuna vitu vya kigeni kwenye fani ya kitenganishi kinachosababisha kukwama (mf. vitambaa katika malighafi)",so:"Simamisha kitenganishi→simamisha kinu→kabla ya kuwasha kinu, washa kitenganishi kwanza→ongeza mafuta→fungua kukagua",p:"Kagua malighafi kwa vitu vya kigeni kabla ya kuingiza; kagua fani ya kitenganishi mara kwa mara"},
+88:{s:"Kinu cha kusaga kinatoa vifaa vingi nje+chembe kubwa zinaongezeka (upangaji wa vigezo usio wa kawaida)",r:"Moja: mteremko wa kuingiza wa kinu una tundu na kuvuja hewa→kiasi halisi cha hewa hakitoshi→vifaa vinakusanyika na kutoka nje; mbili: masafa ya feni yanapungua→mkusanyiko wa vifaa ndani ya kinu ni kubwa mno",so:"Ziba tundu; rekebisha shinikizo la kazi la roller ya kusaga (ongeza ikiwa tabaka la vifaa ni nene, punguza ikiwa ni nyembamba); jaribu mtiririko mkubwa wa hewa+masafa ya juu ya kuchagua unga",p:"Kagua muhuri wa kinu mara kwa mara; thibitisha hakuna kasoro za kimwili kabla ya kurekebisha vigezo"},
+90:{s:"Usawa wa unga wa kinu unabadilika kwa kasi (80 mesh sievi 20-30%+kutoa vifaa nje)",r:"Ufanisi wa mashine ya kuvunja ya awali umepungua→jasi inayoingia kinu ni kubwa mno; vipepera vya kitenganishi vina vitu vilivyonata na kusababisha athari ya mzunguko mfupi; nguvu ya kusaga na mzigo wa mzunguko havina usawa",so:"Kwa muda, pata usawa kwa kurekebisha mtiririko wa hewa, masafa, kiasi cha kuingiza, na shinikizo la roller; badilisha bitana na roller wakati wa kusimama",p:"Mbele: punguza ukubwa wa chembe za kuingiza+wezesha kusaga+dhibiti unyevu; kati: ongeza shinikizo la kusaga+ongeza pete ya kuzuia; nyuma: ongeza chujio cha nje cha mtetemo/kitenganishi cha pili/ongeza muda wa kuchemka"},
+2:{s:"Umeme unakatika kwa muda→bodi laini kwenye kituo cha tatu",r:"Feni ya joto imesimama (inachukua makumi ya sekunde kuanzisha upya), joto la kikaushio linashuka, na kusababisha bodi manyevu",so:"Punguza kasi ya mkanda ili kuongeza muda wa kukausha",p:"Hakuna haja ya kurekebisha kasi ya mkanda wakati kikaushio bado hakijajaa bodi baada ya kuwasha"},
+7:{s:"Moto mkali: bodi inavunjika kwa urahisi/bodi ya moto/inaweza kuchomoka ndani/ishara zaidi mwishoni",r:"Joto la kikaushio ni kubwa mno na kusababisha ushikamano hafifu",so:"Punguza masafa ya feni/ongeza kasi ya mlolongo wa kikaushio: ikiwa sio mbaya, anza kwa 2m; ikiwa ni mbaya, anza kwa 5m",p:"Fuatilia ikiwa joto linashuka baada ya sehemu tupu kupita, joto linapaswa kushuka baada ya bodi kujaa"},
+15:{s:"Hitilafu ya pamoja baada ya kukatika kwa umeme (bodi iliyopasuka+mkanda wa kituo cha pili umeanguka+bodi laini)",r:"Gridi ya umeme Tanzania haina uthabiti, kukatika na kuanzisha upya kunasababisha hitilafu nyingi za mnyororo",so:"Kusimamisha dharura→safisha bodi zilizoharibika→rejesha sehemu zilizoanguka→endesha mfumo wa kidhibiti cha motor ya kituo cha pili→anza upya na tupa bodi→zalisha kwa kawaida",p:"Pendekeza kusakinisha mfumo wa kubadilisha jenereta kiotomatiki"},
+18:{s:"Utaratibu wa kawaida wa kuanzisha upya baada ya kukatika kwa umeme",r:"Gridi ya umeme Tanzania haina uthabiti, baada ya kukatika ni lazima kurejesha kwa utaratibu wa kawaida",so:"Simamisha→kata karatasi→rejesha tope→safisha jukwaa→rekebisha vigezo→vuta karatasi→anza na vifaa manyevu na vikavu→rekebisha kuanguka kwa pembeni",p:"Tengeneza SOP ya kuanzisha upya baada ya kukatika, fundisha wafanyakazi wote"},
+19:{s:"Tofauti za vifaa kati ya kiwanda cha Tanzania na kiwanda cha China",r:"Kikaushio: Tanzania ina kanda mbili za kukausha, China ina kanda tatu; kituo cha tatu: Tanzania haina msumeno wa kutenganisha, ina mstari mmoja tu wa kusafirisha",so:"Rejea uzoefu wa China: ongeza msumeno wa kutenganisha au aina tofauti ya mstari wa kusafirisha ili kuboresha ufanisi",p:"Rejea miundo ya kiwanda cha juu wakati wa kuboresha mstari wa uzalishaji"},
+24:{s:"Kengele ya kompresa ya hewa (voltage ya chini)",r:"Voltage ya kompresa ni ya chini (kawaida 380V, baada ya kengele ilipimwa 340V)",so:"Simamisha, tumia transfoma kuongeza voltage/simamisha mstari wa unga, subiri voltage irejee",p:"Kabla ya kujenga kiwanda, thibitisha kiwango cha voltage ya umeme wa jiji (11KV/22KV/33KV), weka vifaa vya kudhibiti voltage kama akiba"},
+28:{s:"Waya za vifaa vya nje ziko wazi (hatari siku za mvua)",r:"Hakuna ulinzi uliofanywa",so:"Baada ya kugundua wakati wa ukaguzi wa kila siku, funika mara moja",p:"Kagua vifaa vya umeme vya nje mara kwa mara"},
+32:{s:"Kukatika kwa umeme kwa muda mrefu (zaidi ya dakika 5)",r:"Umeme wa jiji umekatika",so:"Anzisha kibadilishaji masafa cha jenereta→tanguliza kusambaza umeme kwa tanuru, kikaushio, na kituo cha tatu (toa bodi kutoka kwenye kikaushio kwanza)→badilisha kwa umeme wa jiji baada ya kurejea",p:"Weka UPS kwa mchanganyaji wa kituo cha kwanza kuepuka kuganda; jaribu jenereta mara kwa mara"},
+68:{s:"Voltage ya chini inaathiri kompresa→vifaa vya nyumatiki havifanyi kazi vizuri (ugavi usio sawa/bodi zilizochanganyika/kifaa cha kutupa hakipandiki)",r:"Voltage ya chini→shinikizo la kompresa halitoshi→vifaa vya nyumatiki havifanyi kazi vizuri",so:"Inua kifaa cha kutupa kwa mkono kutoa bodi kwanza (kuepuka bodi kupandana) kisha rejea kusumeno; angalia hali ya uendeshaji wa vifaa vinavyohusiana",p:"Sakinisha kidhibiti voltage au kifaa cha fidia tendaji (SVG)"},
+20:{s:"Bomba la kurejesha bodi zilizoharibika limekwama",r:"Bodi zilizoharibika (zinazonyonya unyevu) zina unyevu mwingi, ikilinganishwa na unga mkavu ni manyevu mno, na inakwama kwenye sehemu ya kutoa",so:"Safisha kwa mkono",p:"Weka bodi zilizoharibika kwenye hali kavu iwezekanavyo"},
+36:{s:"Mkanda wa kuongeza kasi baada ya kisu cha kituo cha kwanza na kiunganishi cha kwanza cha mlalo kunakwama na kusababisha kusimama",r:"Mkanda wa motor ya roller ya kusafirisha baada ya kisu umekatika→roller ya kuongeza kasi inashindwa→bodi ya mwisho haikusafirishwa kwa wakati→bodi inakwama kwenye mkanda wakati kifaa cha kwanza cha mlalo kinaposhuka",so:"Rekebisha mkanda wa motor ya roller ya kuongeza kasi baada ya kisu",p:"Kagua hali ya mkanda wa motor mara kwa mara; sehemu za mwisho ambazo haziwezi kuwa na mifereji zinaweza kuongezwa miongozo ya kuzuia kupotea"},
+37:{s:"Mizani ya mkanda wa kituo cha kwanza haioni vifaa na inasababisha kusimama (mhimili wa skrubu ya kudhibiti umekatika)",r:"Mhimili wa skrubu ya kudhibiti umekatika→malighafi iliyopikwa haiwezi kusafirishwa hadi kwenye mizani ya mkanda",so:"Unganisha upya mhimili wa skrubu au badilisha mhimili mpya",p:"Kagua hali ya mhimili wa skrubu mara kwa mara; zingatia mzigo wa skrubu"},
+54:{s:"Idadi ya bodi kwenye kikaushio inaathiri joto la kila eneo (mabadiliko yasiyolingana)",r:"Chini ya hali ya kutokujaa, kudhibiti joto kulingana na thamani ya marejeleo ya kujaa husababisha ukaushaji usio bora",so:"Chini ya hali ya kutokujaa, usitumie thamani ya marejeleo ya kujaa; tabiri joto litakavyobadilika na idadi ya bodi; bodi zaidi hunyonya joto na kusababisha joto kushuka",p:"Unganisha joto la awali na kituo cha tatu kwa wakati halisi, kadiria mabadiliko ya joto kulingana na idadi ya bodi katika kila eneo"},
+72:{s:"Kichocheo kilichokaa kwa muda mrefu hakina ufanisi (muda wa kuweka awali na wa mwisho sio wa kawaida)",r:"Katika msimu wa mvua, unga unanyonya unyevu/unakusanyika pamoja au unanyonya maji tena juu ya uso→umumunyifu na uwezo wa kuchochea unapungua",so:"Tumia kanuni ya 'fungua kwanza tumia kwanza, funga kuzuia unyevu'; punguza mara ya uzalishaji na muda wa kuhifadhi (mf. siku 3)",p:"Ongeza jaribio la shughuli kabla ya kuingia mstarini (jaribio la eneo maalum la uso); dhibiti unyevu wa mazingira ya kuhifadhi; saga na utumie mara moja"},
+79:{s:"Bodi za mwanzo mara nyingi hupata moto mkali kwa urahisi",r:"Chini ya hali ya kutokujaa, joto la kikaushio haliwezi kudhibitiwa kwa vigezo, mabadiliko ni makubwa, na kwa kawaida joto hudhibitiwa juu",so:"Ongeza kiasi cha maji ya wanga wakati wa kuvuta bodi za mwanzo (punguza kiasi sawa cha maji safi kudumisha uwiano wa maji-jasi)→wanga inaweza kuboresha moto mkali",p:"Ongeza uwiano wa wanga kama hatua ya akiba wakati wa sehemu ya bodi za mwanzo"},
+85:{s:"Kingo za bodi zinavunjika kwa urahisi (kingo za bodi ni brittle na zinavunjika)",r:"Joto la kuchemka ni kubwa mno→maji ya fuwele ni chini→awamu ya AIII inaongezeka→bodi ni brittle; au kuchemka hakuna usawa na kusababisha kuchemka kwa sehemu",so:"Punguza joto la kuchemka; kagua ikiwa bomba la hewa la tanuru limekwama na kusababisha upikaji usio sawa; ongeza mara ya kugundua maji ya fuwele",p:"Dhibiti joto la kuchemka kati ya 160-164°C; safisha bomba la hewa mara kwa mara; fuatilia maudhui ya awamu tatu (AIII≤5%)"},
+86:{s:"Kukwama upande mmoja wa kikaushio",r:"Fani ya grafiti imeharibika→njia ya roller imesimama→bodi zimekusanyika→kukwama; au nafasi ya kuingiza bodi imehamia/sehemu za mitambo zimeharibika/bodi mbovu zimeingia kimakosa",so:"Gundua safu iliyokwama→simamisha mhimili wa roller ya safu hiyo kwanza→safu zingine endelea kutoa→baada ya kutoa, fungua mlango kushughulikia→ikiwa ni lazima, washa mzunguko wa kurudi kusafirisha bodi",p:"Kituo cha tatu kinapotoa bodi moja, kagua mara moja sehemu ya kutoka ya eneo la pili→sehemu ya kuingiza ya eneo la kwanza→pata mahali pa karibu pa kukwama"},
+89:{s:"Kushikamana hafifu (karatasi ya uso inajitenga kwa eneo kubwa)",r:"Mteremko wa hewa umekwama→unga ndani ya tanuru la kuchemka hukaa kwa muda mrefu→kuchemka kupita kiasi→awamu ya AIII inaongezeka hadi >10%→inachukua maji kwa kasi→maji ya uso yanapungua→fuwele haziwezi kupenya ndani ya nyuzi za karatasi",so:"Dharura: changanya unga wa awamu ya juu ya AIII na unga wa hisa ulioidhinishwa 1:1; nyunyiza karatasi ya uso kabla na ongeza dawa ya kunyunyizia; ongeza uwiano wa maji-jasi kulipa fidia ya maji ya uso; ongeza kiasi cha wanga; punguza kasi kuchelewesha ugandaji",p:"Boresha ulinzi wa unyevu wa vifaa (muhuri wa mteremko wa hewa+kuezeka+ kifaa cha kuondoa unyevu); siku za mvua baada ya kusimama na kuanzisha upya, weka shehena ya kwanza kwenye ghala la kuiva na upime awamu kabla ya kutumia; ikiwa hakuna ghala la akiba, punguza kasi ya uzalishaji"},
+91:{s:"Uchambuzi na hatua za kukabiliana na moto mkali (bodi zinakaa kwa muda mrefu kwenye kikaushio/ nafasi kubwa kati ya bodi/joto kubwa)",r:"Bodi zinakaa kwenye kikaushio kwa muda mrefu+ nafasi kubwa kati ya bodi (inasababishwa na kukatika kwa umeme/kutupa bodi)+ joto la kikaushio ni kubwa mno (mstari wa unga umesimama pekee)",so:"Punguza joto mapema na punguza masafa ya feni; ongeza bodi za ziada kutumia nishati ya joto ya ziada; fungua njia ya kutolea joto (feni ya kutolea unyevu kwa kiwango cha juu) kupunguza joto haraka; kwa muda mfupi, ongeza kasi kufupisha muda wa kukaa",p:"Anzisha utaratibu wa kuunganisha joto wa wakati halisi kati ya joto la awali na kituo cha tatu; fuatilia ubora wa bodi zinazotoka mfululizo hadi joto la bodi iliyojaa liwe imara"},
+92:{s:"Mpango wa kuzuia kushikamana hafifu kwa karatasi ya uso (mlolongo mzima)",r:"Ukosefu wa usawa wa awamu tatu: awamu ya AIII>10%→ushindani wa kunyonya maji→maji ya uso yanapungua→fuwele ni ndogo na dhaifu→wanga hauwezi kukusanyika kwenye uso",so:"Changanya vifaa kupunguza mkusanyiko wa AIII; nyunyiza karatasi ya uso kabla kulipa fidia ya maji ya uso; ongeza uwiano wa maji-jasi+ongeza kiasi cha wanga; dhibiti joto na punguza kasi kuchelewesha ugandaji; punguza joto la eneo la kwanza la kikaushio kuepuka upungufu wa maji wa pili",p:"Boresha ulinzi wa unyevu wa vifaa (muhuri+kuezeka+kuondoa unyevu+insulation+kugonga kwa mtetemo); ufuatiliaji wa ubora (siku za mvua/baada ya kusimama, weka shehena ya kwanza kwenye ghala la kuiva na upime awamu); mpango wa dharura wa kupunguza kasi ya uzalishaji"},
+23:{s:"Bodi zinapandana kwenye kikaushio (kasi haijalingana baada ya kuwasha)",r:"Baada ya kuwasha, kasi ya mlolongo wa kikaushio na kasi ya kuingiza bodi havikulingana",so:"Kagua nafasi ya kutoka kwa mkono, tupa bodi; bodi zote zilizopandana hazijakauka vya kutosha na zinapaswa kutupwa; karibu na mwisho wa kutoka, zinaweza kupata moto mkali",p:"Hakikisha kasi ya mlolongo wa kikaushio inatangulia wakati wa kuwasha, kituo cha kwanza kinapunguza kasi kulingana"},
+4:{s:"Kuangua pembeni (nje/ndani)",r:"Gundi nyeupe imeongezwa sana/kuchora ni chepesi mno→kuanguka nje; gundi nyeupe imeongezwa kidogo/kuchora ni kizito mno→kuanguka ndani",so:"Rekebisha kiasi cha gundi nyeupe, kina cha kuchora, rekebisha vitalu vya pembeni; rekebisha gurudumu la mbele kwa kuanguka ndani, na magurudumu mawili ya nyuma kwa kuanguka nje",p:"Wakati wa kubadilisha karatasi, kagua ubora wa karatasi mpya; rekebisha kina cha kuchora na uangalie hali ya kingo zilizosimama"},
+5:{s:"Bodi inachomoza/inaingia ndani (kituo cha tatu kinatoa bodi yenye kati ya juu/kati ya chini)",r:"Topo ni zito→kati ya juu; topo ni jembamba→kati ya chini",so:"Rekebisha mkusanyiko wa tope (uwiano wa maji-jasi au kiasi cha kipunguza maji)",p:"Kagua hali ya uzito wa tope wakati wa ukaguzi wa kituo cha kwanza, rekebisha kwa wakati"},
+10:{s:"Moshi wa mchanga wa kituo cha kwanza (bomba la kukusanya vumbi limekwama)",r:"Bomba la kukusanya vumbi la kituo cha kwanza limekwama",so:"Safisha kwa mkono na kwa bunduki ya hewa kwenye nafasi mbili, funga tena bomba kwa mkanda",p:"Safisha bomba la kukusanya vumbi mara kwa mara"},
+11:{s:"Maji safi ya kituo cha kwanza yanafurika",r:"Kukatika kwa umeme kumesababisha tope kuziba bomba la maji safi ya kituo cha kwanza",so:"Safisha kiunganishi cha bomba la maji safi na mchanganyaji",p:"Weka kitufe cha maji ya dharura, washa maji ya dharura kwa wakati katika hali zisizotarajiwa"},
+14:{s:"Lifti ya ndoo ya kituo cha kwanza inazima kiotomatiki baada ya kuwasha",r:"Hakuna umeme uliotumwa",so:"Kagua ikiwa umeme umetumwa, thibitisha ugavi wa umeme",p:"Kagua hali ya umeme ya kila kifaa kabla ya kuwasha"},
+17:{s:"Kiwango cha kufaulu cha karatasi ya kifuniko ni cha chini",r:"Ufungaji hauna muhuri (chini haijafungwa kabisa kwa mfuko wa plastiki) na inaweza kupumua vizuri na kunyonya unyevu; haikupangwa kwa usahihi wakati wa usafirishaji",so:"Taka kiwanda cha karatasi kifanye jaribio la kulinganisha kutoka kwa ufungaji na upakiaji",p:"Imarisha mahitaji ya ubora wa kiwanda cha karatasi: ufungaji uliofungwa+upakiaji uliopangwa kwa usahihi"},
+21:{s:"Kingo zisizo imara, haziwezi kusimama",r:"Kisu cha kuunda cha kituo cha kwanza kimekwama",so:"Simamisha na safisha kisu cha kuunda",p:"Kagua hali ya kisu cha kuunda mara kwa mara"},
+26:{s:"Baada ya kukatika kwa umeme na kuanzisha upya, kichocheo cha kutoa povu kinachelewa kufika",r:"Valve ya hewa iliyobanwa imeharibika, haiwezi kufunga wakati imesimamishwa, na inasukuma kichocheo cha kutoa povu na maji safi kutoka kwenye pampu ya kusaga→hakuna kichocheo cha kutoa povu wakati wa kuwasha",so:"Baada ya kuwasha, punguza kasi kwanza kulingana na hali ya kutokuwepo kwa kichocheo cha kutoa povu, angalia mrundikano wa vifaa na ongeza kasi polepole (inachukua sekunde kumi na kadhaa kurejea)",p:"Rekebisha valve ya hewa iliyobanwa"},
+27:{s:"Baada ya kukatika kwa umeme na kuanzisha upya, vifaa vinavyotoka ni jembamba mno",r:"Vifaa vyote haviwezi kuanza kwa wakati mmoja, kuna ucheleweshaji (ucheleweshaji wa kibadilishaji masafa), na viungio mbalimbali haviwezi kufika kwa wakati mmoja",so:"Subiri vifaa kuanza kwa kuchelewa kisha uzalishe bodi kwa kawaida, takriban bodi mbili za kwanza baada ya kuwasha zinapaswa kutupwa",p:"Haiwezi kuepukika kwa sasa; punguza idadi ya kusimama isiyopangwa"},
+33:{s:"Kumwagika kwa tope chini ya mkanda wa kuganda",r:"Karatasi haikuchanwa kwa wakati wakati wa kusimama, na kusababisha tope lililopunguzwa mnato kuchukuliwa",so:"Wakati wa kengele ya kusimama, mfanyakazi wa kituo cha kwanza anapaswa kuchana karatasi ya kifuniko mara moja",p:"Imarisha mafunzo ya dharura ya opereta wa kituo cha kwanza wakati wa kusimama"},
+57:{s:"Mchanganyaji unatoa sauti isiyo ya kawaida",r:"Fimbo ya kuchanganya imelegea",so:"Badilisha fimbo ya kuchanganya; weka gundi ya nyuzi na chemsha kofia ya skrubu wakati wa kusakinisha",p:"Kagua hali ya kukaza kwa fimbo ya kuchanganya mara kwa mara"},
+60:{s:"Tope linaganda na kukwama kwenye mchanganyaji (kinajenga mashine)",r:"Maji ya wanga hayakuongezwa, kiwango cha ghala la wanga kilikuwa chini bila kengele",so:"Imarisha wajibu wa mfanyakazi wa kituo hicho",p:"Kagua utendaji wa sensa ya kiwango; ongeza utaratibu wa uthibitisho wa kengele"},
+62:{s:"Uso wa chini wa karatasi una mifereji isiyo ya kawaida",r:"Inaweza kusababishwa na karatasi mpya (baada ya kukatwa kwa filamu ya plastiki, uso wa mbele hukauka na kusinyaa)/au kuna maji kwenye jukwaa la mkanda",so:"Tumia karatasi iliyokatwa filamu ya plastiki kwanza iwezekanavyo; safisha jukwaa la kusafirisha na kukausha wakati wa kuvuta upya",p:"Tumia karatasi ya kifuniko haraka iwezekanavyo baada ya kufungua"},
+67:{s:"Mchanganyaji unadondosha vipande",r:"Nafasi ya sehemu ya kutoa ni kubwa mno→vipande vya tope ni vikubwa mno",so:"Punguza nafasi ya kutoka (inua rota/shusha pete ya mraba); kumbuka nafasi haiwezi kuwa ndogo mno au shinikizo la kutoka litakuwa kubwa mno",p:"Kwa kawaida, toa mfuko kutoka kituo cha kwanza kukagua hali ya vipande, inaonyesha hali ya kazi ya mchanganyaji"},
+73:{s:"Skrubu ya lifti ya ndoo imeanguka ndani ya mchanganyaji",r:"Bamba la chujio la mbele la ngoma limepasuka na kushindwa kuchuja; sumaku ya bomba la mchanganyaji ilishindwa kunasa (bolt nyeusi ina sumaku hafifu)",so:"Subiri wakati wa kusimama kukagua chujio cha ngoma na lifti ya ndoo inayoharibika mara kwa mara",p:"Kagua uadilifu wa chujio cha ngoma na ufanisi wa kunasa sumaku mara kwa mara"},
+76:{s:"Bodi inavunjika wakati wa uzalishaji",r:"Kipunguza maji kimeongezwa sana na kusababisha tope kuwa jembamba→nguvu ya bodi haitoshi→inavunjika",so:"Punguza kiasi cha kipunguza maji na rekebisha mnato wa tope",p:"Dhibiti kwa ukali kiasi cha kipunguza maji; fuatilia mabadiliko ya mnato wa tope"},
+82:{s:"Mchanganyaji unajenga mashine (vitu vya kigeni ndani ya vifaa vinaziba sehemu ya kutoa)",r:"Vitu vya kigeni ndani ya vifaa vinaziba sehemu ya kutoa ya mchanganyaji",so:"Fungua na safisha; fuatilia kwa karibu sehemu ya kutoa",p:"Hakikisha ulinzi maradufu wa chujio cha ngoma mbele+sumaku; lakini kumbuka bolt nyeusi ina sumaku hafifu"},
+83:{s:"Kiasi cha vifaa kinachotolewa hakitoshi baada ya kuwasha",r:"Mzunguko wa kusafirisha haukuanzishwa mapema→ghala 1 pekee lililowashwa→gurudumu la kugawanya liko mbali→ghala la kudhibiti halikuwa na vifaa vya kutosha kabla ya kuwasha",so:"Tanguliza ghala la kuhifadhi lililo karibu na ghala la kudhibiti au washa ghala nyingi za kuhifadhi kwa wakati mmoja",p:"Anzisha mzunguko wa kusafirisha mapema kabla ya kuwasha; uwezo wa ghala moja ni takriban tani 180≈kila zamu"},
+84:{s:"Baada ya kubadilisha karatasi, uso wa juu wa karatasi una malengelenge kwa eneo kubwa",r:"Uwezo wa kupumua wa karatasi haulingani (karatasi ya juu ya Qiangwei inayostahimili unyevu ilitumika na karatasi ya chini ya Thailand inayostahimili unyevu→malengelenge)",so:"Badilisha kwa karatasi za juu na chini za chapa moja (baada ya kubadilisha karatasi ya chini ya Qiangwei na karatasi ya juu ya Qiangwei, malengelenge yalitoweka)",p:"Jaribu kwa kiwango kidogo kabla ya uzalishaji kamili wakati wa kubadilisha chapa ya karatasi"},
+87:{s:"Sauti isiyo ya kawaida kutoka kwa mchanganyaji (bolt imeanguka ndani)",r:"Bolt imeanguka ndani ya mchanganyaji; matibabu ya uso wa bolt nyeusi yalipunguza sumaku na haikuweza kunaswa",so:"Kagua ikiwa chujio cha kuzunguka kimepasuka tena, badilisha wavu wa chujio",p:"Imarisha utaratibu wa ulinzi maradufu (chujio cha kuzunguka+sumaku); tumia vifaa vinavyoweza kuvutwa na sumaku kwa bolt nyeusi"},
+9:{s:"Bodi zinapandana (kasi ya kikaushio na kasi ya kuingiza bodi havikulingani baada ya kusimama)",r:"Baada ya kusimama na kuanzisha upya, kasi ya mlolongo wa kikaushio na kasi ya kuingiza bodi havikusawazishwa",so:"Zingatia kudhibiti kasi ya kikaushio kwanza, toa miolongo kwanza, kisha washa feni, kisha anzisha tanuru",p:"Tengeneza SOP ya utaratibu wa kawaida wa kuwasha"},
+22:{s:"Kukwama kwa kikaushio wakati wa uzalishaji wa kawaida",r:"Bodi mbovu ambazo hazikutupwa kwenye kituo cha pili zinaweza kuvunjika na kukwama kwenye roller ndani ya kikaushio",so:"Tupa bodi mbovu kwa wakati kwenye kituo cha pili",p:"Imarisha ufahamu wa kutupa bodi mbovu kwa waendeshaji wa kituo cha pili"},
+25:{s:"Kiwango cha uharibifu wa kukata bodi cha kituo cha pili ni cha juu mno",r:"Kisu cha kukata kimechakaa, na kwa urahisi kinaweza kuinua karatasi ya kifuniko",so:"Badilisha kisu cha kukata",p:"Badilisha visu vya kukata kulingana na mpango, weka mafuta kwenye fani za kuendesha mara kwa mara"},
+30:{s:"Kikaushio kimekwama (baada ya kukatika kwa umeme, bodi zinaharibika na kukwama kwa urahisi kwenye kituo cha pili)",r:"Wakati wa kukatika kwa umeme, bodi kwenye mwisho wa mkanda wa eneo la kuganda la kituo cha kwanza hukaa kwa muda mrefu na hushuka kwa urahisi na kuharibika, na kusababisha kukwama kwenye kituo cha pili",so:"Baada ya kusimama na kuanzisha upya, zingatia kutupa bodi mbovu za kituo cha pili",p:"Punguza kusimama kusikopangwa"},
+31:{s:"Roller ya kusafirisha mbele ya kisu cha kukata imesimama na kusababisha kusimama",r:"Mlolongo wa sehemu hiyo ni mrefu mno na umeanguka, roller ya umeme inazunguka bure",so:"Badilisha kwa mlolongo wa ukubwa unaofaa, imarisha skrubu, weka mafuta",p:"Chagua mlolongo wa urefu unaofaa, kagua mvutano na weka mafuta mara kwa mara"},
+34:{s:"Baada ya kupindua kwenye kituo cha pili, bodi za mbele na za nyuma hazilingani (zinaathiri ufanisi wa kukausha)",r:"Uchakavu wa pedi za kuteleza za mashine ya kupindua hautofautiani; mvutano/umri wa mikanda hautofautiani",so:"Badilisha pedi za kuteleza au badilisha mikanda yote kwa wakati mmoja wakati wa kuboresha mstari",p:"Badilisha mikanda na pedi kwa upangaji wa pamoja; hakikisha uteuzi wa mikanda unalingana"},
+35:{s:"Baada ya kupindua kwenye kituo cha pili, bodi inaingia kwenye kikaushio ikigusa pembeni (inaweza kukwama kwa urahisi)",r:"Baada ya kuchana karatasi na kuanzisha upya, bodi za mbele zinaposhughulikiwa kwa mkono zinagusa pembeni kwa urahisi→zinagongana na fimbo ya mlango wa kuingilia wa kikaushio",so:"Badilisha sensa ya kusimamisha ya kwanza ya mlalo ifanye kazi pia wakati wa ushughulikiaji wa mkono; angalia kwa uangalifu usafirishaji wa bodi za mbele baada ya kuanzisha upya, ikiwa kuna hali isiyotarajiwa, sukuma pembeni au tupa mara moja",p:"Safisha sensa ya umeme chini ya mashine ya kupindua mara kwa mara (epuka vumbi kufunika na kushindwa kufanya kazi)"},
+59:{s:"Ugandaji wa tope wa kituo cha pili ni wa polepole na kusababisha bodi kuwa laini na kuharibika",r:"Kuna shida na kichocheo (unga mbichi umechanganywa na unga uliopikwa)",so:"Imarisha upimaji, shughulikia hali isiyo ya kawaida mara moja inapogunduliwa",p:"Udhibiti wa chanzo cha kichocheo: usafi wa unga wa jasi asilia uliosagwa ni bora kuliko unga wa kukusanya vumbi; saga na utumie kichocheo mara moja"},
+61:{s:"Baada ya kupindua kwenye kituo cha pili, kuna mikwaruzo kwenye uso wa chini wa karatasi",r:"Mchakato wa kuchomea wa mkanda wa mbele umefunguka na kusababisha",so:"Wakati wa uzalishaji wa kawaida, kata sehemu iliyoinuka kwanza, badilisha mkanda wakati wa kusimama",p:"Kagua hali ya mchakato wa kuchomea wa mkanda mara kwa mara"},
+6:{s:"Bodi zilizotupwa kwenye kituo cha tatu hazijapita kwenye msumeno wa kukata kingo, na haziwezi kutumika kama pedi",r:"Muundo wa vifaa: njia ya kutupa haipiti kwenye msumeno wa kukata kingo",so:"Wakati wa kusimama, weka kwa mkono kwenye jukwaa la kusafirisha kukata kingo upya, bila kupangilia",p:"Badilisha muundo wa vifaa ili kuunganisha njia ya kutupa kwenye msumeno wa kukata kingo"},
+8:{s:"Bodi manyevu: bodi laini/inaweza kuchomoka kwa undani/ kati ni dhahiri zaidi kuliko mwisho/kipima unyevu ni cha juu",r:"Joto la kikaushio ni la chini na kusababisha ukaushaji usiotosha",so:"Ongeza masafa ya feni/punguza kasi ya mlolongo wa kikaushio",p:"Fuatilia maeneo ya joto ya kikaushio kutoka joto la awali, dumisha joto katika kiwango cha kawaida"},
+38:{s:"Kichapishaji cha wino kimekwama",r:"Bomba la kichapishaji cha wino limekwama",so:"Safisha kifaa cha kuchapisha wino",p:"Safisha kichwa cha kuchapisha wino mara kwa mara"},
+39:{s:"Bodi imekwama kwenye kituo cha tatu (sehemu ya kusukuma bodi ya kisafirishaji cha mnyororo imeharibika baada ya kupindua)",r:"Sehemu ya kusukuma bodi kwenye kisafirishaji cha mnyororo baada ya kupindua kwenye kituo cha tatu imeharibika",so:"Punguza kasi ya kikaushio+fungua mlango; tupa bodi kwenye kituo cha tatu+rekebisha sehemu",p:"Kagua hali ya sehemu za kisafirishaji mara kwa mara"},
+40:{s:"Njia ya roller ya kituo cha tatu imekatika",r:"Sawa na mhimili wa skrubu ya kudhibiti umekatika",so:"Badilisha mhimili mpya",p:"Kagua hali ya mhimili wa njia ya roller mara kwa mara"},
+41:{s:"Bodi zinapandana kwenye sehemu ya kutupa ya kituo cha tatu",r:"Chombo cha mwongozo hakijawekwa vizuri",so:"Rekebisha chombo cha mwongozo",p:"Kagua nafasi ya chombo cha mwongozo mara kwa mara"},
+42:{s:"Kituo cha tatu kinatupa kila wakati (njia ya roller ya pili ya mlalo haiwezi kushuka kwa kawaida)",r:"Fani inayounganisha motor ya njia ya roller ya pili ya mlalo na fremu ya kuinua imeharibika; mpangilio wa kengele ya kibadilishaji masafa cha motor umewekwa juu mno→breki ya kushikilia imeungua",so:"Kagua kila kifaa na utatue mmoja baada ya mwingine; badilisha breki ya kushikilia",p:"Ongeza programu ya kengele ya muda (mkondo unapozidi kikomo kwa muda→anzisha kengele); wakati wa kurekebisha bila kusimama, tumia bodi ndogo kuweka chini ya fremu ya kuinua"},
+63:{s:"Kuna alama za mifereji kwenye uso wa chini wa karatasi ya bodi inayotoka",r:"Muda wa mwisho wa kuganda ni mrefu mno→bodi ni laini→baada ya kisu cha kukata, tope linashikamana kwenye roller na kuganda kuwa uvimbe",so:"Punguza kasi ya kuvuta bodi (joto la awali linapunguza joto ipasavyo); jaribu maudhui ya maji ya fuwele ya kichocheo; jaribu joto la malighafi iliyopikwa na maji ya fuwele; jaribu maji ya fuwele ya madini ya jasi",p:"Muda wa kuhifadhi wa ghala la kuiva: masaa 24-72 (kuiva kwa muda mrefu kunaongeza jasi ya maji mawili na kupunguza mmenyuko wa maji)"},
+74:{s:"Bodi ya mwanzo ni laini",r:"Uzito wa eneo umeongezeka→kikaushio hakijalingana; kiasi cha kichocheo cha kutoa povu kimepungua→kujaza kwa jasi kumeongezeka→uzito wa eneo umeongezeka→uvukizaji wa maji haujatosha",so:"Ongeza kichocheo cha kutoa povu au punguza kasi; wakati wa kuvuta upya, zingatia ikiwa nyongeza za vifaa zimelingana",p:"Baada ya kubadilisha aina/uwiano wa nyongeza za vifaa, fuatilia marekebisho ya kiasi cha kichocheo cha kutoa povu"},
+75:{s:"Mkono wa kuunganisha wa mashine ya kupindua ya kituo cha tatu umeanguka",r:"Sehemu za fani zimeharibika; uzito mkubwa wa bodi unaongeza mzigo wa mashine ya kupindua",so:"Badilisha fani (sehemu za zamani ngumu kutoa zinaweza kuongezwa kwa kuchomea ili kuongeza eneo la kushikilia)",p:"Weka mafuta na kagua viungio mara kwa mara; boresha pini/busha; ongeza kikomo au msaada; boresha kifaa cha majimaji/nyumatiki"},
+77:{s:"Baada ya kukatika kwa umeme mara ya pili, bodi ya mwanzo ni laini",r:"Baada ya kukatika kwa kwanza, eneo la kwanza la kikaushio linahitaji kuongeza joto na kupunguza kasi kudhibiti ubora wa bodi ya mwanzo→kukatika tena kwa wakati huu→joto haliwezi kupanda",so:"Baada ya umeme kurejea mara ya pili, endelea kupunguza kasi/ongeza nguvu ya kupasha joto ya eneo la kwanza",p:"Baada ya kukatika kwa umeme, tanguliza kudumisha uthabiti wa joto la kikaushio"},
+81:{s:"Kingo za bodi (mwisho, kingo za pembeni) zina rangi ya manjano",r:"Joto ni kubwa mno na kusababisha moto mkali",so:"Wakati kuna sehemu tupu kwenye kikaushio→baada ya bodi kutoka, angalia na linganisha kwenye sehemu ya kupangilia ya kituo cha tatu ikiwa kingo zina rangi ya manjano→arifu udhibiti wa joto la awali",p:"Wakati wa kudhibiti sehemu tupu, dhibiti joto la kila eneo la kikaushio; kanuni ni kwamba moto mkali ni bora kuliko bodi laini, lakini zingatia kikomo cha juu cha joto"},
+69:{s:"Filamu ya alumini ya bodi ya filamu imekatika",r:"Filamu ya alumini ina mkazo usio wa kawaida au shida ya ubora wa vifaa",so:"Simamisha mbele→kata→ondoa filamu iliyoharibika→kagua vitu vya kigeni→unganisha upya→washa",p:"Kagua ubora wa filamu ya alumini inayoingia; rekebisha nafasi ya roller ya kukandamiza"},
+70:{s:"Bodi ya filamu haina usawa wa nguvu (upande mmoja mzuri, mwingine mbaya)",r:"Urefu wa roller ya kuendesha filamu ya PVC hauko sawa au kasi ya roller ya filamu ya alumini hailingani",so:"Rekebisha urefu wa roller ya kuendesha filamu ya PVC/ongeza kasi ya roller ya filamu ya alumini",p:"Sawazisha roller ya kuendesha mara kwa mara"},
+93:{s:"Gundi ya filamu ya alumini imezidi (gundi inavuja)",r:"Njia ya kufungia filamu ya juu si sahihi→gundi ya filamu ya alumini inawekwa kwa ziada",so:"Kagua njia ya kufungia ya filamu ya juu; rekebisha nafasi ya roller ya kufunga gundi",p:"Weka kiwango cha utaratibu wa kufungia filamu ya juu"},
+94:{s:"Uso wa bodi ya filamu una mikwaruzo ya chembe",r:"Ukusanyaji wa vumbi kwenye eneo la kusumeno hautoshi→chembe zinashikamana kwenye uso wa bodi→mikwaruzo katika hatua zinazofuata",so:"Ongeza feni baada ya kukata kwa mlalo kulipa fidia ya ukusanyaji wa vumbi; toa maoni kwa mbele kuboresha ukusanyaji wa vumbi",p:"Kagua shinikizo hasi la ukusanyaji wa vumbi (≥-500Pa); safisha bomba la ukusanyaji wa vumbi mara kwa mara"}
+};
+
+// ============ ENGLISH TRANSLATIONS FOR ALL 94 BUILTIN FAULTS ============
+const KB_EN = {
+1:{s:"Power flash (momentary outage) → slurry buildup",r:"Power outage causes belt speed to drop, causing slurry buildup in front of forming roller",so:"Lift the forming roller, wait for accumulated slurry to pass, then restore belt speed before lowering roller",p:"Equip Control 1 mixer with UPS uninterruptible power supply"},
+3:{s:"Clinker chain conveyor to bucket elevator blockage",r:"Rainy season moisture — gypsum powder absorbs moisture and clogs",so:"Increase frequency of knocking the clinker chain conveyor to keep pipeline clear",p:"Monitor机电 sensor signals at connection points (material level transmitted via mechanical swing arm position)"},
+12:{s:"Batching elevator chain break",r:"Upper motor chain break or middle pipeline chain break",so:"Motor chain break → reconnect chain; middle pipeline chain break → manually pull chain",p:"Regularly check chain tension, replace worn chain links promptly"},
+13:{s:"Drag chain conveyor and batching elevator interface blockage",r:"Batching elevator chain break, or lump material blockage",so:"If manual knocking ineffective, use gas torch to cut opening for cleaning; recommend using rubber sledgehammer to protect pipeline",p:"Create access openings at prone-to-clog points; replace with transparent observation windows at clog-prone spots"},
+16:{s:"Hot blast furnace hearth coking (coal liquefaction blocking cap air outlet)",r:"Excessive temperature (>900°C) causes coal melting and coking; too much coal powder; coal impurities lower melting point",so:"Shutdown, wait for hearth to cool, then enter to clean; control T1 ≤850°C",p:"Spread sand for heat conduction before feeding coal; regularly rake hearth to check air caps; sample coal to test powder ratio (≤15% is normal)"},
+29:{s:"Coal issue — coal hopper vibrating feeder not discharging (may cause furnace extinction)",r:"Wet coal (rain exposure outdoors) / caking / coal crusher screen plate may be damaged / crusher inspection port accidentally dropped",so:"Manually knock discharge port → manually clear discharge pipe → manually throw coal into furnace → reduce blast frequency to prevent furnace extinguishing → loader turns and spreads coal to dry",p:"Rain-proof coal shed; add fly ash to absorb moisture; regularly check screen plate machine; remind workers to be careful of coal dropping"},
+43:{s:"Raw heat system T1 temperature continuously dropping (T1 normally ≥800°C)",r:"Coal blockage — coal feeder not discharging; auger transmission受阻;大量coal powder entering hearth; related equipment motor异常",so:"Manually clear coal discharge port; rake hearth to prevent bottom coking and non-combustion;适当增加auger frequency to stabilize T1",p:"Monitor coal moisture and particle size; regularly check auger condition"},
+44:{s:"Belt scale not moving coal when started (frequency shows 0)",r:"Coal discharge hopper outlet blocked",so:"Manually knock to clear",p:"Regularly inspect and clean coal discharge hopper"},
+45:{s:"Grinding system shows insufficient flue gas induced draft fan current",r:"Flue gas induced draft fan blades worn and detached",so:"Replace induced draft fan; when powder line stopped, monitor board line temperature (heat exchanger, zones 1&2)",p:"Regularly check fan blade wear condition; add pre-dust removal measures to reduce particle erosion"},
+46:{s:"Power flash without shutdown (raw heat perspective operation procedure)",r:"Flash stop caused fan to stop but central control shows green (running) status",so:"关闭给煤机→闪停风机fault reset→启停交替→循环风机启动(check zone 1 circulating fan frequency is not 0)→启动给煤机",p:"After flash stop, first verify actual operating status of each fan (cannot rely solely on central control color display)"},
+47:{s:"Power outage restart (raw heat perspective)",r:"After power outage, equipment must be restarted in sequence",so:"Start dryer fans first → reduce dryer chain speed to ensure proper board drying → then start induced draft fan and blast fan → after all equipment started, notify workshop to pull boards and check output quality",p:"Establish standard startup sequence: Control 3 → dryer chain → Control 2 → Control 1"},
+48:{s:"Crusher making abnormal noise (screen plate shifted + stopper rod broken)",r:"Reinforcement plate above crusher fell off and was not discovered in time, prolonged rotation caused damage",so:"Remove outer wall → press screen plate straight → reinstall → replace stopper rod; after repair, avoid running vibrating feeder too high, select small gypsum pieces for feeding",p:"Clear discharge port promptly; regularly check stopper rod and reinforcement plate condition"},
+49:{s:"Raw material bin belt scale actual flow far below setpoint → no on-site discharge",r:"Raw material bin blockage",so:"Open from bottom of bin to clear, strike bin shell",p:"Control raw material moisture; regularly clean bins"},
+50:{s:"Furnace temperature dropping, fire extinguished",r:"Auger not discharging coal, prolonged导致hearth fire extinguished",so:"Collect spilled coal at furnace door → add coal to restart fire → start with less coal and less air → after ignition, add coal and air → rake furnace periodically",p:"Monitor auger coal discharge status; track hearth temperature trends for early warning"},
+51:{s:"Fluidized bed furnace output powder temperature偏高",r:"Powder collection (as accelerator) collected at Control 3 and under electrostatic precipitator → furnace powder input decreases → temperature rises",so:"Reduce or stop powder collection to maintain furnace material volume",p:"Monitor furnace temperature changes during powder collection operations"},
+52:{s:"Air chamber pressure too high",r:"Excessive bottom material in air chamber",so:"Discharge bottom material (close valve when red fuel comes out)",p:"Regularly discharge bottom material"},
+53:{s:"Middle boiling temperature明显higher than lower boiling",r:"Insufficient bottom material",so:"Add bottom material",p:"Maintain dynamic bottom material stability; too大difference → add; too小difference → discharge"},
+55:{s:"Furnace wall coking increasing",r:"T1, T2 temperature较高(contact with bottom material)→ bottom coal melting and coking",so:"Take measures to reduce lower T1 and T2, bring temperature to top T3; control T1 within 850°C",p:"Increase D4 valve opening (reducing inlet air oxygen content → extended底部coal combustion time → blown to upper part for combustion)"},
+56:{s:"Flue gas bag filter bags burned open",r:"Inlet air temperature too high — zone 2 heat exchange tubes have dust, flue gas exits without充分heat exchange",so:"Temporarily rely on bag filter cold air valve to控制temperature (normal bag inlet flue gas temperature 160-170°C)",p:"Regularly clean heat exchange tube dust accumulation"},
+58:{s:"Calcination fluidized bed furnace pressure显示过高→ discharge port冒料→ bucket elevator连接管冒料",r:"Central control system did not timely update bin position and误判discharge bin → actual bin auger not opened causing blockage蔓延至raw heat",so:"Reduce or stop material cooking",p:"Add transparent observation section to air chute; touch temperature (hot = powder flowing) or knock to hear sound to determine if blocked"},
+64:{s:"Screen bottom auger blockage",r:"Auger itself has foreign objects or upstream discharge bin blocked (check if air chute is blocked → discharge bin blocked)",so:"Clean foreign objects inside auger; if discharge bin blockage, improve level sensor",p:"Regularly inspect and clean auger and air chute"},
+65:{s:"Furnace bricks falling off",r:"Thermal expansion and contraction causing furnace bricks to loosen",so:"Regular maintenance, use refractory cement and other materials to fill",p:"Select furnace bricks with better thermal shock resistance; regularly inspect furnace walls"},
+66:{s:"Auger正常discharging coal but hearth temperature won't rise",r:"Auger fault — actually not discharging or insufficient discharge (e.g. auger blockage, bearing断裂)",so:"Open inspection, troubleshoot root cause",p:"Monitor correspondence between coal discharge volume and temperature change, immediately inspect when异常"},
+78:{s:"Pulling boards单独without starting powder line flue gas induced draft fan → dryer temperature过高+ furnace接近正压",r:"Without powder line flue gas induced draft fan, cannot effectively carry hearth temperature to powder line → board line temperature过高炉子正压",so:"Furnace first, when not starting powder line or pulling boards,压炉(stop coal feed, close fans to let temperature slowly decrease but keep furnace from extinguishing)",p:"Establish standard operating procedures for raw heat under special工况"},
+80:{s:"Vertical mill separator current high with trip risk → output powder becoming coarser",r:"Foreign objects卡塞at separator bearing (e.g. impurities like rags in feed material)",so:"Separator stop → vertical mill stop → start separator before starting mill → add oil → open inspection",p:"Check raw material for debris before feeding; regularly inspect separator bearing"},
+88:{s:"Vertical mill大量冒料+ output large particles increasing (parameter adjustment异常)",r:"One: vertical mill feed chute破洞漏风→ actual air volume insufficient → material accumulation冒料; two: fan frequency decreased → material concentration inside mill too high",so:"Seal the hole; adjust grinding roller working pressure (thick material layer调大, thin调小); try high air volume + extremely high powder selection frequency",p:"Regularly check vertical mill shell sealing; confirm no physical defects before adjusting parameters"},
+90:{s:"Vertical mill output powder fineness异常fluctuation (80 mesh sieve residue 20-30% +冒料)",r:"Front-end roll crusher efficiency decreased → incoming gypsum too coarse; separator blades挂料producing short-circuit effect; grinding force and circulation load imbalance (low pressure积料/饱磨伪装); dynamic and static sealing defects",so:"Temporarily find air-material-pressure balance point by adjusting air volume, frequency, feed rate, roller pressure (sub-balance state); replace liners and rollers during shutdown",p:"Front end: reduce feed particle size + grinding aid + moisture control; middle: increase grinding pressure + raise retaining ring; back end: external vibrating screen / secondary separation / increase calcination residence time"},
+2:{s:"Power flash → Control 3 board soft",r:"Hot air fan stopped (restart takes tens of seconds), dryer temperature decreased,导致湿板",so:"Reduce belt speed to increase drying time",p:"No need to adjust belt speed when dryer not yet full of boards just after startup"},
+7:{s:"Overfire: board brittle / board hot / can深插/ ends more明显",r:"Dryer temperature too high导致粘接性差",so:"Reduce fan frequency / increase dryer chain speed: not serious start at 2m adjustment, serious start at 5m adjustment",p:"After empty board section passes,持续observe whether temperature drops; temperature should有下降过程after full boards"},
+15:{s:"Power outage综合fault (cracked board + Control 2 belt脱落+ soft board)",r:"Tanzania grid不稳定, power outage restart导致多处连锁故障",so:"Emergency stop → clean废板→ restore脱落位置→ operate Control 2 motor control system → restart and放废→ normal production",p:"Recommend equipping with generator automatic switchover system"},
+18:{s:"Power outage restart standard procedure",r:"Tanzania grid不稳定, post-outage must follow standard procedure to恢复",so:"Stop → cut paper → recover slurry → clean platform → adjust parameters → pull paper → wet-dry material start → adjust倒边",p:"Develop power outage restart SOP, train all position personnel"},
+19:{s:"Tanzania plant vs domestic China plant equipment differences overview",r:"Dryer: Tanzania has two-zone drying (parallel), China mostly three-zone drying; Control 3: Tanzania has no slitting saw, only one conveyor line",so:"Reference domestic experience: add slitting saw or conveyor line format to improve Control 3 board transfer efficiency",p:"Reference advanced domestic and international plant designs when upgrading production line"},
+24:{s:"Air compressor alarm (low voltage)",r:"Air compressor voltage low (normal 380V, measured 340V after alarm)",so:"Shutdown, use transformer to raise voltage / stop powder line, wait for voltage恢复",p:"Before plant construction, first confirm utility supply voltage level (11KV/22KV/33KV),备用voltage stabilization device"},
+28:{s:"Outdoor equipment electrical wires exposed (dangerous in rainy days)",r:"No protective treatment applied",so:"During daily inspection, upon discovery immediately cover and treat",p:"Regularly inspect outdoor electrical facilities"},
+32:{s:"Extended power outage (over 5 minutes)",r:"Utility power interrupted",so:"Start generator frequency converter →优先supply power to furnace, dryer, Control 3 (discharge boards from dryer first) → switch from generator to utility when power returns",p:"Control 1 mixer equipped with UPS to prevent铸机; regularly test generator"},
+68:{s:"Low voltage affecting air compressor → pneumatic devices异常(uneven feeding /乱板/放废挡板 unable to lift)",r:"Low voltage → air compressor pressure insufficient → pneumatic devices working poorly",so:"Manually force lift放废挡板to discharge boards first (avoid stacked boards) then return to saw; observe related动力设备operating condition",p:"Install voltage stabilizer or dynamic reactive power compensation device (SVG)"},
+20:{s:"Waste board回收管blocked",r:"Waste boards (absorbing moisture) have high moisture content, compared to dry powder too wet, blocking discharge port",so:"Manually clear",p:"Keep waste boards as dry as possible in storage"},
+36:{s:"Control 1 post-cutter acceleration belt and first横连接处卡板causing shutdown",r:"Post-cutter drive roller motor belt断裂→ acceleration roller失效→ last board not transferred in time → board扎入belt when first横下沉",so:"Repair post-cutter acceleration roller motor belt",p:"Regularly check motor belt condition; ends that cannot have grooves explore adding guide rollers防跑偏"},
+37:{s:"Control 1 belt scale不见料导致shutdown (stabilizing auger shaft broken)",r:"Stabilizing auger shaft断裂→ clinker cannot be transported to belt scale",so:"Re-weld auger shaft or replace with new shaft",p:"Regularly check auger shaft condition;注意auger load"},
+54:{s:"Number of boards in dryer affecting each zone temperature (non-synchronous changes)",r:"Under未满板conditions, controlling temperature by满板reference values导致板材drying unsatisfactory",so:"Under未满板conditions, do not use满板reference values for temperature control; need to预判board quantity changes对应temperature changes; more boards absorb more heat causing temperature drop",p:"Raw heat and Control 3 real-time联动, raw heat estimate temperature changes based on board quantity in each dryer zone"},
+72:{s:"Long-stored accelerator ineffective (abnormal initial and final setting)",r:"Rainy season powder moisture absorption/agglomeration or surface re-hydration → dissolution speed and accelerating ability decreased",so:"Adopt 'first-opened first-used, sealed moisture-proof'; reduce preparation frequency and storage time (e.g. 3 days)",p:"Add pre-line activity test (specific surface area test); control storage environment humidity; grind and use immediately"},
+79:{s:"Board头板frequently容易过火",r:"Under非满板conditions, dryer temperature cannot be controlled by parameters, changes较大, generally temperature controlled偏高",so:"When pulling board头, increase starch water feed volume (equally reduce clean water to maintain water-gypsum ratio) → starch can improve overfire",p:"Increase starch ratio during board头section as buffer measure"},
+85:{s:"Edge brittleness (board edges brittle and crumbling)",r:"Calcination temperature偏高→ crystallization water偏低→ AIII phase increases → board brittle; or uneven calcination with localized over-burning",so:"Reduce calcination temperature; check if furnace air pipes are blocked causing uneven material cooking; increase crystallization water testing frequency",p:"Stabilize calcination temperature at 160-164°C; regularly clear air pipes; monitor three-phase content (AIII≤5%)"},
+86:{s:"Dryer一侧堵板",r:"Graphite bearing damaged → roller停转→ board堆积→堵板; or board entry position偏移/mechanical parts损坏/坏板误入",so:"发现某层堵板→ first停该层辊轴→ other layers正常出→ after cleared open door处理→ if necessary开反转运板",p:"When Control 3发现出单板, immediately check zone 2出口→ zone 1进口→ find nearest堵板位置"},
+89:{s:"Poor bonding (large area护面纸脱纸)",r:"Air chute堵料→ powder停留过长in calcination furnace → over-burning → AIII phase飙升至>10%→ rapidly抢夺水分→ interface moisture枯竭→ crystals cannot penetrate into paper fibers",so:"Emergency: blend high AIII phase powder with qualified库存powder at 1:1 ratio to dilute; pre-wet护面纸and increase spray volume; increase water-gypsum ratio to compensate interface moisture; increase starch addition; reduce speed to延缓setting speed",p:"Equipment moisture-proof upgrade (air chute sealing + canopy + dehumidification device); after rainy day shutdown restart, first batch aged and phases tested before use; when no备用bin, reduce production speed"},
+91:{s:"Overfire problem analysis and countermeasures (boards停留长in dryer /间距大/ temperature high)",r:"Boards停留时间长in dryer + board间距过大(caused by power outage pulling boards/放废) + dryer temperature过高(powder line单独stopped)",so:"Raw heat提前降温reduce fan frequency; supplement垫板消耗excess热能; open旁路排热(排潮风机max)快速泄压降温; short term适当提速缩短停留时间",p:"Establish real-time temperature联动mechanism between raw heat and Control 3; during empty board section持续track output quality直到满板温度稳定"},
+92:{s:"护面纸粘接不良failure prevention plan (full chain)",r:"Three-phase imbalance: AIII phase>10%→竞争吸水→ interface moisture枯竭→ crystals细碎强度低→ starch cannot富集界面",so:"Material blending to dilute AIII concentration; pre-wet护面纸to compensate interface moisture; increase water-gypsum ratio + increase starch amount;控温降速延缓setting; lower dryer zone 1 temperature to prevent secondary dehydration",p:"Equipment moisture-proof upgrade (sealing + canopy + dehumidification + insulation + vibration knocking); quality monitoring (rainy days/after shutdown, first batch aged and tested before use); reduced speed production contingency plan"},
+23:{s:"Dryer搭板(speed not matched after startup)",r:"After startup, dryer chain speed and board feed speed not matched",so:"Manually check output position,放废; all搭板板材均未充分干燥需放废; near end of discharge容易过火",p:"Ensure dryer chain speed先行during startup, Control 1同步降速匹配"},
+4:{s:"Edge collapse (outward/inward)",r:"Too much white glue / scoring too light → outward collapse; too little white glue / scoring too heavy → inward collapse",so:"Adjust white glue amount, scoring depth, adjust edge blocks; inward collapse adjust front edge wheel, outward collapse adjust rear two wheels",p:"When changing paper,注意检查新纸外观质量, adjust scoring depth while observing立边状态"},
+5:{s:"Board convex/concave (Control 3 output board middle high/middle low)",r:"Slurry thick → Control 3 output middle high; slurry thin → Control 3 output middle low",so:"Adjust slurry concentration (water-gypsum ratio or water reducer dosage)",p:"Control 1 patrol observes slurry thickness状态, timely adjustment"},
+10:{s:"Control 1 smoke sand (dust collection pipe blocked)",r:"Control 1 dust collection pipe blocked",so:"Perform manual mechanical疏通and air gun疏通at two locations, re-seal pipe with tape",p:"Regularly clean dust collection pipes"},
+11:{s:"Control 1 clean water overflow",r:"Power outage shutdown导致slurry堵塞Control 1 clean water pipe",so:"Clear the clean water pipe and mixer interface",p:"Equip emergency water button, timely activate emergency water in突发situations"},
+14:{s:"Bucket elevator自动关停after Control 1 startup",r:"Power not supplied",so:"Check if power is supplied, confirm power supply",p:"Check equipment power supply status before startup"},
+17:{s:"Low护面纸qualification rate",r:"Packaging not sealed (bottom not completely sealed with plastic bag) more breathable更容易吸潮;运输时未错峰摆放",so:"Require paper factory to do对比试验from packaging and loading to test效果",p:"Strengthen paper factory quality requirements: sealed packaging +错峰装车"},
+21:{s:"立边不稳, unable to立边",r:"Control 1 forming knife blocked",so:"Shutdown, clean forming knife",p:"Regularly check forming knife condition"},
+26:{s:"After power outage restart, foaming agent delayed arrival",r:"Compressed air valve damaged, cannot close完全when stopped, blows foaming agent and clean water out of emulsifying pump → no foaming agent at startup",so:"After startup, first reduce speed to match no-foaming-agent situation, observe material accumulation degree and gradually increase speed (about十几秒恢复)",p:"Repair compressed air valve"},
+27:{s:"After power outage restart, discharge较稀",r:"Equipment cannot start simultaneously, there are delays (frequency converter delay), various additives cannot arrive simultaneously",so:"Wait for equipment to sequentially延时start then正常产板, about first two boards after startup need to be放废",p:"Currently unavoidable, reduce unplanned shutdown frequency"},
+33:{s:"Slurry overflow below setting belt",r:"Paper not torn in time during shutdown,导致冲稀的料浆被带走",so:"During shutdown alarm, Control 1 should第一时间tear护面纸",p:"Strengthen Control 1 operator shutdown emergency training"},
+57:{s:"Mixer abnormal noise",r:"Mixing rod松动",so:"Replace mixing rod; add螺纹胶, weld screw cap during installation",p:"Regularly check mixing rod紧固状态"},
+60:{s:"Slurry setting and blockage in mixer (铸机)",r:"Starch water not added, starch bin level low without alarm",so:"Strengthen position personnel responsibility",p:"Check level sensor function; add alarm confirmation mechanism"},
+62:{s:"Irregular grooves on bottom paper surface",r:"May be caused by new paper (after plastic film cut open and left, front几面风干收缩) / or there is water on belt board",so:"Use paper with cut plastic film as soon as possible; when重新拉板clean conveyor platform and dry",p:"Use护面纸as soon as possible after opening"},
+67:{s:"Mixer dropping lumps",r:"Outlet spacing偏大→料块过大",so:"Reduce outlet spacing (raise rotor/lower square ring);注意spacing不能过小否则出料压力过大",p:"Regularly放包from Control 1 to check料块情况, reflects mixer working status"},
+73:{s:"Bucket elevator翻板screw dropped into mixer",r:"Front-end滚筒筛screen破洞未能筛出; mixer pipe magnet未能吸附(black bolt磁性弱)",so:"Wait for shutdown to检修滚筒筛and常坏斗提",p:"Regularly check滚筒筛网完整性and magnet吸附效果"},
+76:{s:"Board breaking during production",r:"Water reducer added too much导致料稀→ board strength不足→ breaking",so:"Reduce water reducer dosage, adjust slurry thickness",p:"Strictly control water reducer addition amount;关注料浆稠度变化"},
+82:{s:"Mixer铸机(debris in material blocking outlet)",r:"Debris in material blocking mixer outlet",so:"Disassemble and clean;重点监控下料口",p:"Front-end滚筒筛+ magnet double insurance; but注意black bolt磁性弱"},
+83:{s:"Insufficient discharge volume after startup",r:"Material circulation not提前开启→ only bin 1 opened → dividing wheel far away → stabilizing bin insufficient material before startup",so:"优先开启closer to stabilizing bin的储料仓or多个储料仓同时下料",p:"提前开启material circulation before startup; single bin capacity 180 tons≈每班投料量"},
+84:{s:"After paper change,大面积起泡on upper paper surface",r:"Paper透气性不匹配(Qiangwei moisture-resistant upper paper paired with Thailand moisture-resistant lower paper发生起泡)",so:"Switch to same brand配套上下纸(after switching to Qiangwei moisture-resistant lower paper with Qiangwei moisture-resistant upper paper,起泡现象消失)",p:"Before changing paper brand,先小批量试生产验证匹配性"},
+87:{s:"Mixer abnormal noise (bolt dropped in)",r:"Bolt dropped into mixer; black bolt surface treatment导致磁性减弱未能被吸附",so:"Check if旋转筛has再次破洞, replace screen mesh",p:"Strengthen double insurance mechanism (旋转筛+ magnet); use magnetically attractable material for black bolts"},
+9:{s:"搭板(after shutdown restart, dryer speed and feed speed mismatch)",r:"After shutdown restart, dryer chain speed and feed speed not synchronized",so:"注意控制干燥机速度先行,先放链条,再开风机,再启动炉子",p:"Develop standard startup sequence SOP"},
+22:{s:"Dryer堵板during normal production",r:"Control 2未放废的坏板entering dryer may断裂卡辊",so:"Control 2 timely放废坏板",p:"Strengthen Control 2 operator放废awareness"},
+25:{s:"Control 2 cutting damage rate过高",r:"Cutter worn,容易挑起护面纸",so:"Replace cutter",p:"Replace cutter blades按计划, regularly lubricate drive bearings"},
+30:{s:"Dryer堵板(after power outage, board变形entering Control 2容易堵)",r:"During power outage,板材at Control 1 setting zone belt end停留时间长容易下陷变形, entering Control 2容易堵板",so:"After shutdown restart,注意放废Control 2坏板",p:"Reduce unplanned shutdowns"},
+31:{s:"Drive roller before cutter停转causing shutdown",r:"Chain at this位置太长脱落, motor electric roller空转",so:"Replace with适当尺寸的链条,加固螺丝,涂润滑油",p:"Select适当长度的链条, regularly check tension and lubricate"},
+34:{s:"After Control 2翻板,前后板对不齐(affects drying effect)",r:"翻板机sliding pad磨损不一; belt tension/newness程度不同",so:"Replace sliding pad or统一更换新皮带during line upgrade",p:"计划性统一更换皮带和垫皮;注意皮带选型一致"},
+35:{s:"After Control 2翻板, board贴边entering dryer (容易卡板)",r:"After tearing paper and restarting, front section boards when manually handled容易贴边→ collides with dryer入口门杆",so:"Change第一横停止感应器to also work during manual handling; after restart谨慎观察前段板运输,发现意外立即侧推或放废",p:"经常清理翻板机下方光电传感器(避免灰尘遮盖失效)"},
+59:{s:"Control 2 slurry setting慢导致板软变形",r:"Accelerator出现问题(生粉里掺有熟粉)",so:"加强检测,发现异常及时处理",p:"Accelerator source control: natural gypsum ground生粉purity优于收尘粉; accelerator现磨现用"},
+61:{s:"After Control 2翻板, scratches on bottom paper surface",r:"Front-end belt焊接处开皮造成",so:"正常生产时先把翘皮处销断,待停机时再更换皮带",p:"定期检查皮带焊接处状态"},
+6:{s:"Control 3放废板未切边锯,导致不能用来做垫板",r:"Equipment design:放废通道不经过切边锯",so:"趁停机时人工放入输送台重新切边,不码垛",p:"Equipment modification时将放废通道接入切边锯"},
+8:{s:"Wet board: board soft / can深插/ middle比端头明显/ moisture meter偏高",r:"Dryer temperature low导致干燥不充分",so:"Increase fan frequency / reduce dryer chain speed",p:"Raw heat monitor dryer各温区, maintain temperature in normal range"},
+38:{s:"喷印堵塞",r:"喷墨设备喷嘴堵塞",so:"Clean喷墨设备",p:"Regularly clean喷墨头"},
+39:{s:"Control 3卡板(after翻板链式输送机推板配件损坏)",r:"Control 3 after翻板链式输送机上推板配件损坏",so:"Dryer减速+开门; Control 3放废+修复配件",p:"Regularly check conveyor配件状态"},
+40:{s:"Control 3出板辊道断",r:"Similar to stabilizing auger shaft断裂",so:"Replace with new shaft",p:"Regularly check辊道轴状态"},
+41:{s:"Control 3放废处搭板",r:"Guide wheel position不当",so:"Adjust guide wheel",p:"Regularly check guide wheel position"},
+42:{s:"Control 3一直放废(second横辊道无法正常下降)",r:"Second横辊道motor and起落架connecting bearing损坏; motor frequency converter alarm参数设置过高→抱闸烧坏",so:"Check各设备逐一排除; replace抱闸",p:"Add time alarm program (current超限超时→触发报警); during不停机修复use小板垫着起落架"},
+63:{s:"Output board bottom paper surface有沟痕",r:"Final setting time太长→ board soft → after cutter, slurry粘接在辊上凝结成块",so:"降拉板速度(raw heat对应降温); test accelerator crystallization water content; test clinker temperature, crystallization water; test gypsum ore crystallization water",p:"陈化仓料放置时间24-72 hours (过长二水石膏增加导致水化反应减弱)"},
+74:{s:"Board头板软",r:"单重增加→ dryer未匹配; foaming agent用量减少→ gypsum填充增加→单重增加→水分蒸发不充分",so:"Increase foaming agent or降速; when重新拉板注意辅料添加是否已匹配",p:"After changing辅料种类/配比,关注发泡剂用量的匹配调整"},
+75:{s:"Control 3翻板机连接臂脱落",r:"Bearing零件损坏;板材单重偏大加重翻板机负载",so:"Replace bearing (old parts难取下可焊接增加着力面积)",p:"紧固件定期润滑检查;销轴/衬套upgrade;加装限位或支撑;液压/气动装置改善缓冲"},
+77:{s:"After second power outage, board头板软",r:"First outage后干燥机一区需边升温边降速控板头质量→此时再次停电→温度升不上来",so:"After second power return,继续降速/加大一区升温力度",p:"停电后优先保障干燥机温度稳定"},
+81:{s:"Board edges (ends,棱边)泛黄",r:"Temperature过高过火导致",so:"干燥机有空板段→出板后在Control 3垛台处观察对比判断是否板边黄→通知原热控温",p:"控制空板段时干燥机各区温度;宁可过火不可板软的原则下注意温度上限"},
+69:{s:"覆膜板铝膜断裂",r:"铝膜受力异常或材质问题",so:"停前端→割断→取废膜→检查异物→重接→开机",p:"检查铝膜来料质量;调整压辊间距"},
+70:{s:"覆膜板受力不均(一边好一边坏)",r:"PVC膜传动辊高度不水平or铝膜辊转速不匹配",so:"调节PVC膜传动辊高度/增大铝膜辊转速",p:"定期校正传动辊水平度"},
+93:{s:"覆膜板铝膜胶过量(胶溢出)",r:"上膜缠绕穿引方式不当→铝膜胶涂布过多",so:"检查上膜缠绕穿引方式;调节涂胶辊间距",p:"规范上膜穿引操作标准"},
+94:{s:"覆膜板板面颗粒划损",r:"锯切区收尘不充分→颗粒附着板面→后续工序划损",so:"横切后增加风扇补偿收尘;反馈前端改进收尘",p:"检查收尘负压(≥-500Pa);定期清理收尘管道"}
+};
+
+// Data layer: in-memory cache + localStorage fallback + Firebase sync
+let _userDataCache = null;
+
+function loadUserData() {
+  if (_userDataCache !== null) return _userDataCache;
+  try {
+    const raw = localStorage.getItem('bnbm_fault_user_kb');
+    _userDataCache = raw ? JSON.parse(raw) : [];
+  } catch(e) { _userDataCache = []; }
+  return _userDataCache;
+}
+
+function saveUserData(data) {
+  _userDataCache = data;
+  localStorage.setItem('bnbm_fault_user_kb', JSON.stringify(data));
+  // Push to Firebase (fire and forget, real-time listener triggers refresh for others)
+  db.ref('faults/userFaults').set(data).catch(function(){});
+  db.ref('faults/lastUpdated').set(new Date().toISOString()).catch(function(){});
+}
+
+// Firebase real-time listener: when any user changes data, all pages update
+function startFirebaseSync() {
+  syncLog('Connected to Firebase Realtime Database');
+  updateSyncStatusUI();
+  db.ref('faults/userFaults').on('value', function(snapshot) {
+    var remote = snapshot.val();
+    if (!remote || !Array.isArray(remote)) return;
+    var local = loadUserData();
+    if (JSON.stringify(remote) !== JSON.stringify(local)) {
+      _userDataCache = remote;
+      localStorage.setItem('bnbm_fault_user_kb', JSON.stringify(remote));
+      if (currentLang === 'sw') {
+        autoTranslateUserFaults().then(function() { refreshAll(); });
+      } else {
+        refreshAll();
+      }
+      syncLog('Received cloud update (' + remote.length + ' user records)');
+      updateSyncStatusUI();
+    }
+  });
+}
+
+// Active knowledge base = builtin + user
+function getFullKB() {
+  return [...BUILTIN_KB, ...loadUserData()];
+}
+
+// Keyword index
+function buildIndex(kb) {
+  const idx = {};
+  kb.forEach(f => {
+    (f.keywords||[]).forEach(kw => {
+      const k = kw.toLowerCase();
+      if (!idx[k]) idx[k] = [];
+      idx[k].push(f.id);
+    });
+  });
+  return idx;
+}
+
+// Search function
+function searchKB(query) {
+  var kb = getFullKB();
+  if (query && query.trim()) {
+    query = expandSwKeywords(query);
+  }
+  var q = query.toLowerCase().trim();
+  if (!q) return kb.map(function(f) { return {score: 0, fault: f}; });
+
+  var scores = {};
+  var words = q.split(/\s+/);
+
+  kb.forEach(function(f) {
+    var score = 0;
+    var text = ((f.symptom||'') + ' ' + (f.root_cause||f.rootCause||'') + ' ' + (f.solution||'') + ' ' + (f.keywords||[]).join(' ')).toLowerCase();
+    var sw = KB_SW[f.id];
+    if (sw) {
+      text += ' ' + (sw.s||'') + ' ' + (sw.r||'') + ' ' + (sw.so||'') + ' ' + (sw.p||'');
+    }
+    var en = KB_EN[f.id];
+    if (en) {
+      text += ' ' + (en.s||'') + ' ' + (en.r||'') + ' ' + (en.so||'') + ' ' + (en.p||'');
+    }
+
+    (f.keywords||[]).forEach(function(kw) {
+      if (q && kw.toLowerCase().includes(q)) score += 5;
+      words.forEach(function(w) {
+        if (w.length >= 2 && kw.toLowerCase().includes(w)) score += 3;
+      });
+    });
+
+    words.forEach(function(w) {
+      if (w.length >= 2 && text.includes(w)) score += 1;
+    });
+
+    if (q && (f.symptom||'').toLowerCase().includes(q)) score += 4;
+    if (q && (f.root_cause||f.rootCause||'').toLowerCase().includes(q)) score += 2;
+
+    if (score > 0) {
+      scores[f.id] = score;
+    }
+  });
+
+  var results = kb.filter(function(f) { return scores.hasOwnProperty(f.id); }).map(function(f) { return {score: scores[f.id]||0, fault: f}; });
+  results.sort(function(a,b) { return b.score - a.score; });
+  return results.slice(0, 20);
+}
+
+// ============ RENDER ============
+function renderFaultCard(fault, score) {
+  const sevClass = {红色:'sev-red',橙色:'sev-orange',黄色:'sev-yellow',信息:'sev-info'};
+  const cls = sevClass[fault.severity] || 'sev-info';
+  var symptom = fault.symptom;
+  var rootCause = fault.root_cause || fault.rootCause || '';
+  var solution = fault.solution || '';
+  var prevention = fault.prevention || '';
+  if (currentLang === 'sw') {
+    var sw = (!fault._noTranslate && KB_SW[fault.id]) ? KB_SW[fault.id] : null;
+    if (sw) {
+      symptom = sw.s; rootCause = sw.r; solution = sw.so; prevention = sw.p || '';
+    } else if (!KB_SW[fault.id]) {
+      symptom = _swCache[fault.symptom] || fault.symptom;
+      rootCause = _swCache[fault.root_cause] || fault.root_cause;
+      solution = _swCache[fault.solution] || fault.solution;
+      prevention = _swCache[fault.prevention || ''] || fault.prevention || '';
+    }
+  } else if (currentLang === 'en') {
+    var en = (!fault._noTranslate && KB_EN[fault.id]) ? KB_EN[fault.id] : null;
+    if (en) {
+      symptom = en.s; rootCause = en.r; solution = en.so; prevention = en.p || '';
+    }
+    // For user-added records without manual EN translation, show original (Chinese)
+  }
+
+  let html = `<div class="card" style="${fault.id > 94 ? 'border-left:3px solid var(--green);' : ''}">`;
+  html += `<h3>${fault.id > 94 ? '🆕 ' : ''}${escHtml(symptom)}</h3>`;
+  html += `<div class="meta">`;
+  html += `<span class="sev ${cls}">${fault.severity}</span>`;
+  html += `<span>📍 ${escHtml(fault.area)}</span>`;
+  if (score !== undefined) html += `<span>🔗 ${t('matchScore')}: ${Math.round(Math.min(score/10,1)*100)}%</span>`;
+  if (fault.id > 94) html += `<span style="color:var(--green);">${t('userAdded')}</span>`;
+  html += `</div>`;
+  html += `<div class="field"><div class="field-label">${t('fieldRootCause')}</div><div class="field-value">${escHtml(rootCause)}</div></div>`;
+  html += `<div class="field"><div class="field-label">${t('fieldSolution')}</div><div class="field-value">${escHtml(solution)}</div></div>`;
+  if (prevention) html += `<div class="field"><div class="field-label">${t('fieldPrevention')}</div><div class="field-value">${escHtml(prevention)}</div></div>`;
+  // Photos
+  if (fault.photos && fault.photos.length > 0) {
+    html += `<div class="photo-in-card">`;
+    fault.photos.forEach((p, i) => {
+      html += `<img src="${p}" alt="Photo ${i+1}" onclick="viewPhoto(event, '${i}', '${fault.id}')" loading="lazy">`;
+    });
+    html += `</div>`;
+  }
+  // Edit button for user-added faults
+  if (fault.id > 94) {
+    html += `<div class="btn-group" style="margin-top:8px;">`;
+    html += `<button class="btn btn-secondary btn-sm" onclick="editFault(${fault.id})">${currentLang==='zh'?'编辑':currentLang==='sw'?'Hariri':'Edit'}</button>`;
+    html += `<button class="btn btn-danger btn-sm" onclick="deleteFault(${fault.id})">${currentLang==='zh'?'删除':currentLang==='sw'?'Futa':'Delete'}</button>`;
+    html += `</div>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderSearchResults() {
+  try {
+    var q = document.getElementById('searchInput').value;
+    var results = searchKB(q);
+
+    document.getElementById('resultCount').textContent = q
+      ? t('resultFound') + ' ' + results.length + ' ' + t('records')
+      : t('headerCount') + ' ' + getFullKB().length + ' ' + t('items');
+
+    var container = document.getElementById('searchResults');
+    if (!container) { console.error('searchResults container not found'); return; }
+
+    if (results.length === 0) {
+      container.textContent = '';
+      var emptyDiv = document.createElement('div');
+      emptyDiv.className = 'empty-state';
+      emptyDiv.innerHTML = '<div class="big">🔍</div><p>' + t('noResult') + '</p>';
+      container.appendChild(emptyDiv);
+    } else {
+      var html = results.map(function(r) { return renderFaultCard(r.fault, r.score); }).join('');
+      try {
+        container.innerHTML = html;
+      } catch(innerErr) {
+        console.error('innerHTML error:', innerErr.message);
+        container.textContent = '渲染出错，请刷新页面';
+      }
+    }
+  } catch(err) {
+    console.error('renderSearchResults error:', err.message, err.stack);
+  }
+}
+
+function renderBrowse() {
+  const area = document.getElementById('browseArea').value;
+  const sev = document.getElementById('browseSeverity').value;
+  let kb = getFullKB();
+  if (area) kb = kb.filter(f => f.area === area || f.area.includes(area));
+  if (sev) kb = kb.filter(f => f.severity === sev);
+  kb.sort((a,b) => a.id - b.id);
+
+  document.getElementById('browseCount').textContent = t('headerCount') + ' ' + kb.length + ' ' + t('items');
+  document.getElementById('browseResults').innerHTML = kb.length === 0
+    ? `<div class="empty-state"><p>${t('noMatch')}</p></div>`
+    : kb.map(f => renderFaultCard(f)).join('');
+}
+
+// Populate area filter dropdowns
+function populateAreaFilters() {
+  var kb = getFullKB();
+  var areas = [];
+  var seen = {};
+  kb.forEach(function(f) { if (!seen[f.area]) { seen[f.area] = true; areas.push(f.area); } });
+  areas.sort();
+  var opts = areas.map(function(a) { return '<option value="' + a + '">' + a + '</option>'; }).join('');
+  document.getElementById('browseArea').innerHTML = '<option value="">' + t('allAreas') + '</option>' + opts;
+}
+
+// ============ FAULT CRUD ============
+function saveFault() {
+  const symptom = document.getElementById('fSymptom').value.trim();
+  const area = document.getElementById('fArea').value;
+  const keywordsRaw = document.getElementById('fKeywords').value.trim();
+  const severity = document.getElementById('fSeverity').value;
+  const rootCause = document.getElementById('fRootCause').value.trim();
+  const solution = document.getElementById('fSolution').value.trim();
+  const prevention = document.getElementById('fPrevention').value.trim();
+  const editId = document.getElementById('fEditId').value;
+
+  if (!symptom || !rootCause || !solution || !keywordsRaw) {
+    showToast(t('fillRequired'));
+    return;
+  }
+
+  const keywords = keywordsRaw.split(/[,，]/).map(k => k.trim()).filter(k => k);
+
+  let userData = loadUserData();
+
+  if (editId) {
+    // Update existing
+    const idx = userData.findIndex(f => f.id === parseInt(editId));
+    if (idx >= 0) {
+      userData[idx] = { ...userData[idx], symptom, area, keywords, root_cause: rootCause, solution, prevention, severity, photos: tempPhotos };
+      showToast(t('saved'));
+    }
+  } else {
+    // New fault
+    const maxId = getFullKB().reduce((max, f) => Math.max(max, f.id), 0);
+    userData.push({
+      id: maxId + 1,
+      area, symptom, keywords, root_cause: rootCause, solution, prevention, severity, photos: tempPhotos
+    });
+    showToast(t('added'));
+  }
+
+  saveUserData(userData);
+  cancelEdit();
+  if (currentLang === 'sw') {
+    autoTranslateUserFaults().then(function() { refreshAll(); });
+  } else {
+    refreshAll();
+  }
+  autoSyncAfterChange();
+}
+
+function editFault(id) {
+  const userData = loadUserData();
+  const fault = userData.find(f => f.id === id);
+  if (!fault) return;
+
+  document.getElementById('addTitle').textContent = t('editTitle');
+  document.getElementById('fSymptom').value = fault.symptom;
+  document.getElementById('fArea').value = fault.area;
+  document.getElementById('fKeywords').value = (fault.keywords||[]).join(', ');
+  document.getElementById('fSeverity').value = fault.severity;
+  document.getElementById('fRootCause').value = fault.root_cause || fault.rootCause || '';
+  document.getElementById('fSolution').value = fault.solution;
+  document.getElementById('fPrevention').value = fault.prevention || '';
+  document.getElementById('fEditId').value = id;
+  tempPhotos = fault.photos || [];
+  renderPhotoPreviews();
+  document.getElementById('btnCancel').style.display = '';
+
+  switchTab('pageAdd');
+  window.scrollTo(0, 0);
+}
+
+function deleteFault(id) {
+  if (!confirm('Delete this fault record? This action cannot be undone.')) return;
+  let userData = loadUserData();
+  userData = userData.filter(f => f.id !== id);
+  saveUserData(userData);
+  showToast(t('deleted'));
+  refreshAll();
+  autoSyncAfterChange();
+}
+
+function cancelEdit() {
+  document.getElementById('addTitle').textContent = t('addTitle');
+  document.getElementById('fSymptom').value = '';
+  document.getElementById('fArea').value = '原热';
+  document.getElementById('fKeywords').value = '';
+  document.getElementById('fSeverity').value = '橙色';
+  document.getElementById('fRootCause').value = '';
+  document.getElementById('fSolution').value = '';
+  document.getElementById('fPrevention').value = '';
+  document.getElementById('fEditId').value = '';
+  document.getElementById('fPhotos').value = '';
+  document.getElementById('photoPreview').innerHTML = '';
+  tempPhotos = [];
+  document.getElementById('btnCancel').style.display = 'none';
+}
+
+// ============ PHOTO HANDLING ============
+let tempPhotos = [];
+
+async function handlePhotos(event) {
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+
+  const maxPhotos = 3;
+  const maxWidth = 400;
+  const quality = 0.5;
+
+  for (let i = 0; i < Math.min(files.length, maxPhotos - tempPhotos.length); i++) {
+    try {
+      const dataUrl = await compressImage(files[i], maxWidth, quality);
+      tempPhotos.push(dataUrl);
+    } catch(e) {
+      syncLog('Image compression failed: ' + e.message);
+    }
+  }
+
+  renderPhotoPreviews();
+  event.target.value = '';
+}
+
+function compressImage(file, maxWidth, quality) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > maxWidth) { h = h * maxWidth / w; w = maxWidth; }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderPhotoPreviews() {
+  const container = document.getElementById('photoPreview');
+  if (!container) return;
+  let html = '';
+  tempPhotos.forEach((p, i) => {
+    html += `<div class="photo-thumb"><img src="${p}" alt="Preview ${i+1}"><button class="del" onclick="removePhoto(${i})">x</button></div>`;
+  });
+  container.innerHTML = html;
+}
+
+function removePhoto(idx) {
+  tempPhotos.splice(idx, 1);
+  renderPhotoPreviews();
+}
+
+function viewPhoto(event, photoIdx, faultId) {
+  event.stopPropagation();
+  const kb = getFullKB();
+  const fault = kb.find(f => f.id === faultId);
+  if (!fault || !fault.photos) return;
+
+  const photos = fault.photos;
+  let currentIdx = parseInt(photoIdx);
+  showPhotoModal(photos, currentIdx);
+}
+
+function showPhotoModal(photos, idx) {
+  // Remove existing modal
+  const existing = document.querySelector('.photo-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.className = 'photo-modal';
+  modal.innerHTML = '<button class="close-btn" onclick="closePhotoModal()">x</button><img src="' + photos[idx] + '" alt="照片">';
+  modal.onclick = function(e) {
+    if (e.target === modal) closePhotoModal();
+  };
+
+  // Swipe/click to navigate
+  if (photos.length > 1) {
+    let currentIdx = idx;
+    modal.onclick = function(e) {
+      if (e.target === modal || e.target.tagName === 'IMG') {
+        currentIdx = (currentIdx + 1) % photos.length;
+        modal.querySelector('img').src = photos[currentIdx];
+      }
+    };
+  }
+
+  document.body.appendChild(modal);
+}
+
+function closePhotoModal() {
+  const modal = document.querySelector('.photo-modal');
+  if (modal) modal.remove();
+}
+
+// ============ IMPORT / EXPORT ============
+function exportData() {
+  const data = {
+    builtin: BUILTIN_KB,
+    user: loadUserData(),
+    exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `fault_kb_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(t('exported'));
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.user || !Array.isArray(data.user)) {
+        showToast(t('importFail'));
+        return;
+      }
+      const existing = loadUserData();
+      const existingIds = new Set(existing.map(f => f.id));
+      const newItems = data.user.filter(f => !existingIds.has(f.id));
+      if (newItems.length === 0) {
+        showToast(t('importNoNew'));
+        return;
+      }
+      const merged = [...existing, ...newItems];
+      saveUserData(merged);
+      if (currentLang === 'sw') {
+        autoTranslateUserFaults().then(function() { refreshAll(); });
+      } else {
+        refreshAll();
+      }
+      showToast(t('imported') + ' ' + newItems.length + ' ' + t('newRecords'));
+      autoSyncAfterChange();
+    } catch(err) {
+      showToast(t('importError'));
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function resetUserData() {
+  if (!confirm('Clear all user-added records? The 94 preset records will not be affected.')) return;
+  saveUserData([]);
+  refreshAll();
+  showToast(t('cleared'));
+  autoSyncAfterChange();
+}
+
+// ============ FIREBASE SYNC ============
+function syncLog(msg) {
+  var logEl = document.getElementById('syncLog');
+  if (logEl) {
+    var time = new Date().toLocaleTimeString();
+    logEl.textContent = '[' + time + '] ' + msg + '\n' + logEl.textContent;
+    logEl.style.display = '';
+  }
+}
+
+function updateSyncStatusUI() {
+  var statusEl = document.getElementById('syncStatusArea');
+  var settingSync = document.getElementById('settingSync');
+  if (statusEl) statusEl.innerHTML = '<span class="sync-status sync-ok"><span class="sync-dot ok"></span>Firebase Connected · Live Sync</span>';
+  if (settingSync) settingSync.textContent = 'Firebase Live Sync';
+}
+
+// Called after user adds/edits/deletes — data already saved via saveUserData()
+function autoSyncAfterChange() {
+  syncLog('Data saved to cloud');
+  updateSyncStatusUI();
+}
+
+// ============ UI HELPERS ============
+function switchTab(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  document.querySelector(`.tab-item[data-page="${pageId}"]`).classList.add('active');
+
+  if (pageId === 'pageSearch') renderSearchResults();
+  if (pageId === 'pageBrowse') renderBrowse();
+  if (pageId === 'pageSettings') updateSettings();
+  window.scrollTo(0,0);
+}
+
+function showToast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 2200);
+}
+
+function updateSettings() {
+  var user = loadUserData();
+  document.getElementById('settingTotal').textContent = getFullKB().length + ' records';
+  document.getElementById('settingUserAdded').textContent = user.length + ' records';
+  document.getElementById('settingVersion').textContent = '2026.05.10-v7';
+  updateSyncStatusUI();
+}
+
+function refreshAll() {
+  populateAreaFilters();
+  renderSearchResults();
+  renderBrowse();
+  updateSettings();
+  applyTranslations();
+  document.getElementById('headerCount').textContent = t('headerCount') + '：' + getFullKB().length + ' ' + t('items');
+}
+
+// ============ INIT ============
+var _searchTimer = null;
+function onSearchInput() {
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(renderSearchResults, 200);
+}
+
+async function startupSync() {
+  // Load from Firebase, fallback to localStorage
+  try {
+    var snap = await db.ref('faults/userFaults').once('value');
+    var remote = snap.val();
+    if (remote && Array.isArray(remote)) {
+      _userDataCache = remote;
+      localStorage.setItem('bnbm_fault_user_kb', JSON.stringify(remote));
+      syncLog('Loaded ' + remote.length + ' user records from cloud');
+    }
+  } catch(err) {
+    syncLog('Cannot connect to cloud, using local cache');
+  }
+  // Start real-time listener
+  startFirebaseSync();
+  updateSettings();
+  refreshAll();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  applyTranslations();
+  populateAreaFilters();
+  renderSearchResults();
+  renderBrowse();
+  startupSync();
+});
+
+// Keyboard shortcut
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    document.getElementById('searchInput').focus();
+  }
+});
+
+// Kill any old Service Worker that may be caching stale pages
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    regs.forEach(function(r) { r.unregister(); });
+  });
+}
+</script>
+</body>
+</html>

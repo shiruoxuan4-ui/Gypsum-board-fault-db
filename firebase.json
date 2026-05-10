@@ -1,0 +1,17 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      ".git",
+      ".claude",
+      "node_modules",
+      "*.py",
+      "*.md",
+      "*.txt",
+      ".gitignore",
+      "firebase.json",
+      ".firebaserc"
+    ],
+    "cleanUrls": true
+  }
+}
