@@ -10,11 +10,7 @@ A structured knowledge base and CLI diagnostic tool for gypsum board production 
 - Offline PWA via Firebase Hosting + Service Worker
 ## Tech Stack
 Python · JSON · Firebase · PWA · Service Worker · HTML/CSS
-## Screenshots
-[Add screenshots here]
 ## Usage
 python fault_diagnosis_cli.py --query "板边黄"
-## Architecture
-[Add architecture diagram here]
 ## Author
 Xintao Shi — Process Engineer, Tanzania
